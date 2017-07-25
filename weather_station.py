@@ -25,7 +25,10 @@ import os.path
 save_file = 'tempumidity.pickle'
 
 GOOGLE_DRIVE_FOLDER_ID = '0B9LUnfJLTYXLZEItVXdnZFJwN3c'
+
 CHART_FOLDER_ID = '0B9LUnfJLTYXLSGFCY3J5WU9PNTg'
+CHART_ID = '0B9LUnfJLTYXLMzdvYjdsU29QU2M'
+BOKEH_CHART = 'tempumidity.html'
 
 def pickle_data(data, save_file):
     with open(save_file, 'wb') as f:
@@ -39,8 +42,8 @@ def unpickle_data(data_list, save_file):
 
     return data_list
 
-def bokeh_plot(data_list, g_drive_upload=False, g_account=None, g_drive_file_id=None):
-    output_file('tempumidity.html', title='Temp and Humidity at the House')
+def bokeh_plot(data_list):
+    output_file(BOKEH_CHART, title='Temp and Humidity at the House')
 
     date_times = [d[0] for d in data_list]
     temps = [d[1] for d in data_list]
@@ -91,41 +94,6 @@ def bokeh_plot(data_list, g_drive_upload=False, g_account=None, g_drive_file_id=
     # p.y_range = y_ran
 
     save(p)
-    # png_file = export_png(p, filename='tempumidity.png')
-    if g_drive_upload:
-        if g_drive_file_id:
-            drive_file = g_account.upload_file(
-                'tempumidity.html', parent_folder=CHART_FOLDER_ID, f_id=g_drive_file_id)
-        else:
-            drive_file = g_account.upload_file('tempumidity.html', parent_folder=CHART_FOLDER_ID)
-        return drive_file['id']
-    else:
-        return None
-
-# def do_auth():
-# 	gauth = GoogleAuth('settings.yaml')
-# 	gauth.CommandLineAuth()
-# 	drive = GoogleDrive(gauth)
-#
-# 	return gauth, drive
-#
-# def google_drive_upload(drive, g_auth, filename, parent_folder='', id=None):
-#     head, title = os.path.split(filename)
-#     f_metadata = {'title': title}
-#     if parent_folder:
-#         f_metadata['parents'] = [{'id': parent_folder}]
-#     if id:
-#         f_metadata['id'] = id
-#
-#     f = drive.CreateFile(f_metadata)
-#     f.SetContentFile(filename)
-#     try:
-#         f.Upload()
-#     except pydrive.files.ApiRequestError:
-#         g_auth.Refresh()
-#         f.Upload()
-#
-#     return f
 
 
 class Camera:
@@ -205,17 +173,13 @@ def main():
         print("Chip ID     : %d" % chip_id)
         print("Version     : %d" % chip_version)
 
-    picture_path = camera.take_picture()
-    g_account.upload_file(
-        picture_path, parent_folder=GOOGLE_DRIVE_FOLDER_ID)
-    os.remove(picture_path)
-
-    # camera.take_video()
-
-    old_picture_time = datetime.datetime.now()
-    # old_video_time = old_picture_time
-    picture_delay = datetime.timedelta(minutes=10)
-    # video_delay = datetime.timedelta(hours=1)
+    # picture_path = camera.take_picture()
+    # g_account.upload_file(
+    #     picture_path, parent_folder=GOOGLE_DRIVE_FOLDER_ID)
+    # os.remove(picture_path)
+    #
+    # old_picture_time = datetime.datetime.now()
+    # picture_delay = datetime.timedelta(minutes=10)
 
     while True:
         # video_taken = False
@@ -229,18 +193,6 @@ def main():
 
         dt = datetime.datetime.now()
 
-        if dt - old_picture_time > picture_delay:
-            old_picture_time = dt
-            try:
-                camera.take_picture(g_drive_upload=True, g_account=g_account)
-            except pydrive.files.ApiRequestError:
-                camera.take_picture()
-
-        # if dt - old_video_time > video_delay:
-        #     old_video_time = dt
-        #     video_length = camera.take_video()
-        #     video_taken = True
-
         if humidity is not None and dht_temp is not None:
             print('{0} - Temp={1:0.1f}* Humidity={2:0.1f}% Pressure={3:0.2f} mbar'.format(dt, temp, humidity, pressure, altitude))
 
@@ -248,7 +200,8 @@ def main():
 
             l.append(tup)
 
-            drive_plot_file_id = bokeh_plot(l, g_drive_upload=True, g_account=g_account, g_drive_file_id=drive_plot_file_id)
+            bokeh_plot(l)
+            g_account.upload_file(BOKEH_CHART, parent_folder=CHART_FOLDER_ID, f_id=CHART_ID)
 
             with open(save_file, 'wb') as f:
                 pickle.dump(l, f)
@@ -256,13 +209,14 @@ def main():
         else:
             print('Failed to get reading.')
 
-        # if video_taken:
-        #     if video_length > 60:
-        #         continue
-        #     else:
-        #         time.sleep(60-video_length)
-        # else:
-        #     time.sleep(60)
+        # take picture every 5 minutes on the fifth minute.
+        if dt.minute % 5 == 0:
+            picture_file = camera.take_picture()
+
+            g_account.upload_file(
+                picture_file, parent_folder=GOOGLE_DRIVE_FOLDER_ID)
+
+            os.remove(picture_file)
 
         time.sleep(60)
 
