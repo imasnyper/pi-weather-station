@@ -15,8 +15,10 @@ import sqlite3
 
 from sensors import DHT22, BMP280
 
-from pydrive.auth import GoogleAuth
-from pydrive.drive import GoogleDrive
+# from pydrive.auth import GoogleAuth
+# from pydrive.drive import GoogleDrive
+from mydrive import G_Account
+
 import os
 import os.path
 
@@ -37,7 +39,7 @@ def unpickle_data(data_list, save_file):
 
     return data_list
 
-def bokeh_plot(data_list, g_drive_upload=False, g_drive=None, g_drive_file_id=None):
+def bokeh_plot(data_list, g_drive_upload=False, g_account=None, g_drive_file_id=None):
     output_file('tempumidity.html', title='Temp and Humidity at the House')
 
     date_times = [d[0] for d in data_list]
@@ -92,45 +94,45 @@ def bokeh_plot(data_list, g_drive_upload=False, g_drive=None, g_drive_file_id=No
     # png_file = export_png(p, filename='tempumidity.png')
     if g_drive_upload:
         if g_drive_file_id:
-            drive_file = google_drive_upload(g_drive,
-                                             'tempumidity.html', parent_folder=CHART_FOLDER_ID, id=g_drive_file_id)
+            drive_file = g_account.upload_file(
+                'tempumidity.html', parent_folder=CHART_FOLDER_ID, f_id=g_drive_file_id)
         else:
-            drive_file = google_drive_upload(g_drive, 'tempumidity.html', parent_folder=CHART_FOLDER_ID)
+            drive_file = g_account.upload_file('tempumidity.html', parent_folder=CHART_FOLDER_ID)
         return drive_file['id']
     else:
         return None
 
-def do_auth():
-	gauth = GoogleAuth('settings.yaml')
-	gauth.CommandLineAuth()
-	drive = GoogleDrive(gauth)
-
-	return gauth, drive
-
-def google_drive_upload(drive, g_auth, filename, parent_folder='', id=None):
-    head, title = os.path.split(filename)
-    f_metadata = {'title': title}
-    if parent_folder:
-        f_metadata['parents'] = [{'id': parent_folder}]
-    if id:
-        f_metadata['id'] = id
-
-    f = drive.CreateFile(f_metadata)
-    f.SetContentFile(filename)
-    try:
-        f.Upload()
-    except pydrive.files.ApiRequestError:
-        g_auth.Refresh()
-        f.Upload()
-
-    return f
+# def do_auth():
+# 	gauth = GoogleAuth('settings.yaml')
+# 	gauth.CommandLineAuth()
+# 	drive = GoogleDrive(gauth)
+#
+# 	return gauth, drive
+#
+# def google_drive_upload(drive, g_auth, filename, parent_folder='', id=None):
+#     head, title = os.path.split(filename)
+#     f_metadata = {'title': title}
+#     if parent_folder:
+#         f_metadata['parents'] = [{'id': parent_folder}]
+#     if id:
+#         f_metadata['id'] = id
+#
+#     f = drive.CreateFile(f_metadata)
+#     f.SetContentFile(filename)
+#     try:
+#         f.Upload()
+#     except pydrive.files.ApiRequestError:
+#         g_auth.Refresh()
+#         f.Upload()
+#
+#     return f
 
 
 class Camera:
     def __init__(self):
         self.camera = PiCamera()
 
-    def take_picture(self, g_drive_upload=False, g_drive=None, g_auth=gauth, resolution=(3280, 2464), framerate=15):
+    def take_picture(self, resolution=(3280, 2464), framerate=15):
         print('Taking picture...')
 
         self.camera.resolution = resolution
@@ -153,12 +155,6 @@ class Camera:
         time.sleep(3)
 
         self.camera.capture(self.path)
-        if g_drive_upload:
-            google_drive_upload(g_drive,
-                                g_auth,
-                                self.path, parent_folder=GOOGLE_DRIVE_FOLDER_ID)
-            os.remove(self.path)
-
         self.camera.stop_preview()
 
         return self.path
@@ -190,7 +186,8 @@ class Camera:
         return length
 
 def main():
-    gauth, drive = do_auth()
+    # gauth, drive = do_auth()
+    g_account = G_Account()
     drive_plot_file_id = None
 
     try:
@@ -208,7 +205,10 @@ def main():
         print("Chip ID     : %d" % chip_id)
         print("Version     : %d" % chip_version)
 
-    camera.take_picture(g_drive_upload=True, g_drive=drive)
+    picture_path = camera.take_picture()
+    g_account.upload_file(
+        picture_path, parent_folder=GOOGLE_DRIVE_FOLDER_ID)
+    os.remove(picture_path)
 
     # camera.take_video()
 
@@ -232,7 +232,7 @@ def main():
         if dt - old_picture_time > picture_delay:
             old_picture_time = dt
             try:
-                camera.take_picture(g_drive_upload=True, g_drive=drive, g_auth=gauth)
+                camera.take_picture(g_drive_upload=True, g_account=g_account)
             except pydrive.files.ApiRequestError:
                 camera.take_picture()
 
@@ -248,7 +248,7 @@ def main():
 
             l.append(tup)
 
-            drive_plot_file_id = bokeh_plot(l, g_drive_upload=True, g_drive=drive, g_drive_file_id=drive_plot_file_id)
+            drive_plot_file_id = bokeh_plot(l, g_drive_upload=True, g_account=g_account, g_drive_file_id=drive_plot_file_id)
 
             with open(save_file, 'wb') as f:
                 pickle.dump(l, f)
