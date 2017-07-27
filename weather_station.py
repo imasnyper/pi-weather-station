@@ -34,7 +34,8 @@ def pickle_data(data, save_file):
     with open(save_file, 'wb') as f:
         pickle.dump(l, f)
 
-def unpickle_data(data_list, save_file):
+def unpickle_data(save_file):
+    data_list = []
     with open(save_file, 'rb') as f:
         data = pickle.load(f)
         for d in data:
@@ -81,17 +82,7 @@ def bokeh_plot(data_list):
     )
     sp3.line(date_times, pressures, color='purple')
 
-    # p.extra_y_ranges = {"hum": DataRange1d(start=0, end=100)}
-    # p.line(date_times, humidities, color='darkblue', y_range_name='hum', legend='Humidity')
-    # p.add_layout(LinearAxis(y_range_name='hum'), 'left')
-
     p = column(children=[sp1, sp2, sp3], sizing_mode="stretch_both")
-
-    # p.title.text = 'Temp and Humidity at the House'
-    # p.legend.location = 'top_left'
-    # p.xaxis.axis_label = 'Date'
-    # p.yaxis.axis_label = 'Temperature'
-    # p.y_range = y_ran
 
     save(p)
 
@@ -110,13 +101,6 @@ class Camera:
         self.filename = 'image-{}.jpeg'.format(
             datetime.datetime.now().strftime('%d-%m-%y %X'))
         self.path = os.path.join('/home/pi/Dev/weather_station/pics/', self.filename)
-        # self.camera.iso = 100
-        # time.sleep(2)
-        # self.camera.shutter_speed = self.camera.exposure_speed
-        # self.camera.exposure_mode = 'off'
-        # g = self.camera.awb_gains
-        # self.camera.awb_mode = 'off'
-        # self.camera.awb_gains = g
 
         self.camera.start_preview()
 
@@ -134,13 +118,6 @@ class Camera:
         self.camera.framerate = framerate
         self.camera.vflip = True
         self.camera.hflip = True
-        # self.camera.iso = 100
-        # time.sleep(2)
-        # self.camera.shutter_speed = self.camera.exposure_speed
-        # self.camera.exposure_mode = 'off'
-        # g = self.camera.awb_gains
-        # self.camera.awb_mode = 'off'
-        # self.camera.awb_gains = g
 
         self.camera.start_preview()
 
@@ -159,7 +136,7 @@ def main():
     drive_plot_file_id = None
 
     try:
-        l = unpickle_data([], save_file)
+        l = unpickle_data(save_file)
     except FileNotFoundError:
         l = []
     t_h_sensor = DHT22()
@@ -183,6 +160,7 @@ def main():
 
     while True:
         # video_taken = False
+        loop_time = datetime.datetime.now()
 
         humidity, dht_temp = t_h_sensor.read()
 
@@ -191,12 +169,13 @@ def main():
 
         temp = (dht_temp + bmp_temp) / 2
 
-        dt = datetime.datetime.now()
-
         if humidity is not None and dht_temp is not None:
-            print('{0} - Temp={1:0.1f}* Humidity={2:0.1f}% Pressure={3:0.2f} mbar'.format(dt, temp, humidity, pressure, altitude))
+            print(('{0:%d-%m-%y %X} - '
+                   'Temp={1:0.1f}*\tHumidity = {2:0.1f}%\tPressure = {3:0.2f} '
+                   'mbar').format(
+                       loop_time, temp, humidity, pressure, altitude))
 
-            tup = (dt, temp, humidity, pressure)
+            tup = (loop_time, temp, humidity, pressure)
 
             l.append(tup)
 
@@ -210,7 +189,7 @@ def main():
             print('Failed to get reading.')
 
         # take picture every 5 minutes on the fifth minute.
-        if dt.minute % 5 == 0:
+        if loop_time.minute % 5 == 0:
             picture_file = camera.take_picture()
 
             g_account.upload_file(
@@ -218,7 +197,8 @@ def main():
 
             os.remove(picture_file)
 
-        time.sleep(60)
+        time_taken = datetime.datetime.now() - loop_time
+        time.sleep(45)
 
 if __name__ == '__main__':
     main()

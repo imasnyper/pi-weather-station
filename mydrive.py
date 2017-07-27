@@ -2,6 +2,8 @@ from pydrive.auth import GoogleAuth
 from pydrive.drive import GoogleDrive
 from pydrive.files import ApiRequestError
 
+from urllib.error import HttpError
+
 import os
 import os.path
 
@@ -61,7 +63,6 @@ class G_Account():
 
         if parent_folder:
             f_metadata['parents'] = [{'id': parent_folder}]
-            # print(f_metadata)
         if f_id:
             f_metadata['id'] = f_id
 
@@ -69,7 +70,8 @@ class G_Account():
         f.SetContentFile(local_path)
         try:
             f.Upload()
-        except ApiRequestError:
+        except HTTPError as e:
+            print('Server error {}.\nRefreshing Google auth token and retyring.'.format(e.code))
             self.gauth.Refresh()
             f.Upload()
 
@@ -81,7 +83,8 @@ class G_Account():
         try:
             f.FetchMetadata()
             metadata = f.metadata
-        except ApiRequestError:
+        except HTTPError as e:
+            print("Server error {}. \nRefreshing Google auth token and retrying.".format(e.code))
             self.gauth.Refresh()
             f.FetchMetadata()
             metadata = f.metadata
