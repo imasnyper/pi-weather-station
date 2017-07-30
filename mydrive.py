@@ -2,7 +2,7 @@ from pydrive.auth import GoogleAuth
 from pydrive.drive import GoogleDrive
 from pydrive.files import ApiRequestError
 
-from urllib.error import HttpError
+from urllib.error import HTTPError
 
 import os
 import os.path
@@ -57,7 +57,16 @@ class G_Account():
         self.gauth.CommandLineAuth()
         self.drive = GoogleDrive(self.gauth)
 
+    def token_valid(self):
+        token_exp = self.gauth.access_token_expired
+        print("Token {}. Type {}.".format(token_exp, type(token_exp)))
+        return token_exp
+
     def upload_file(self, local_path, parent_folder='', f_id=''):
+        if not self.token_valid():
+            print("Token expired...refreshing.")
+            self.gauth.Refresh()
+
         head, title = os.path.split(local_path)
         f_metadata = {'title': title}
 
@@ -69,11 +78,18 @@ class G_Account():
         f = self.drive.CreateFile(f_metadata)
         f.SetContentFile(local_path)
         try:
+            print("Uploading file {}...".format(title))
             f.Upload()
-        except HTTPError as e:
-            print('Server error {}.\nRefreshing Google auth token and retyring.'.format(e.code))
+        # except HTTPError as e:
+        #     print('Server error {}.\nRefreshing Google auth token and retyring.'.format(e.code))
+        #     self.gauth.Refresh()
+        #     f.Upload()
+        except Exception as e:
+            print('Encountered error: {}\nwhile attempting upload. Attempting Google Auth Refresh, and retrying upload.'.format(e))
             self.gauth.Refresh()
             f.Upload()
+
+        print("Upload successful.")
 
         return f
 

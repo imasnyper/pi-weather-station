@@ -22,7 +22,7 @@ from mydrive import G_Account
 import os
 import os.path
 
-save_file = 'tempumidity.pickle'
+DATA_FILE = 'tempumidity.pickle'
 
 GOOGLE_DRIVE_FOLDER_ID = '0B9LUnfJLTYXLZEItVXdnZFJwN3c'
 
@@ -30,13 +30,13 @@ CHART_FOLDER_ID = '0B9LUnfJLTYXLSGFCY3J5WU9PNTg'
 CHART_ID = '0B9LUnfJLTYXLMzdvYjdsU29QU2M'
 BOKEH_CHART = 'tempumidity.html'
 
-def pickle_data(data, save_file):
-    with open(save_file, 'wb') as f:
-        pickle.dump(l, f)
+def pickle_data(data, data_file):
+    with open(data_file, 'wb') as f:
+        pickle.dump(data, f)
 
-def unpickle_data(save_file):
+def unpickle_data(data_file):
     data_list = []
-    with open(save_file, 'rb') as f:
+    with open(data_file, 'rb') as f:
         data = pickle.load(f)
         for d in data:
             data_list.append(d)
@@ -123,7 +123,10 @@ class Camera:
 
         time.sleep(3)
 
-        self.camera.start_recording('/home/pi/Dev/weather_station/videos/video-{}.h264'.format(datetime.datetime.now().strftime('%d-%m-%y %X')))
+        self.camera.start_recording(('/home/pi/Dev/weather_station/videos/'
+                                     'video-{}.h264').format(
+                                         datetime.datetime.now().strftime(
+                                             '%d-%m-%y %X')))
         self.camera.wait_recording(length)
         self.camera.stop_recording()
         self.camera.stop_preview()
@@ -135,8 +138,10 @@ def main():
     g_account = G_Account()
     drive_plot_file_id = None
 
+    temp_pictures = []
+
     try:
-        l = unpickle_data(save_file)
+        l = unpickle_data(DATA_FILE)
     except FileNotFoundError:
         l = []
     t_h_sensor = DHT22()
@@ -160,6 +165,7 @@ def main():
 
     while True:
         # video_taken = False
+
         loop_time = datetime.datetime.now()
 
         humidity, dht_temp = t_h_sensor.read()
@@ -171,7 +177,7 @@ def main():
 
         if humidity is not None and dht_temp is not None:
             print(('{0:%d-%m-%y %X} - '
-                   'Temp={1:0.1f}*\tHumidity = {2:0.1f}%\tPressure = {3:0.2f} '
+                   'Temperature = {1:0.1f}*\tHumidity = {2:0.1f}%\tPressure = {3:0.2f} '
                    'mbar').format(
                        loop_time, temp, humidity, pressure, altitude))
 
@@ -180,10 +186,8 @@ def main():
             l.append(tup)
 
             bokeh_plot(l)
-            g_account.upload_file(BOKEH_CHART, parent_folder=CHART_FOLDER_ID, f_id=CHART_ID)
 
-            with open(save_file, 'wb') as f:
-                pickle.dump(l, f)
+            pickle_data(l, DATA_FILE)
 
         else:
             print('Failed to get reading.')
@@ -192,13 +196,34 @@ def main():
         if loop_time.minute % 5 == 0:
             picture_file = camera.take_picture()
 
-            g_account.upload_file(
-                picture_file, parent_folder=GOOGLE_DRIVE_FOLDER_ID)
+            temp_pictures.append(picture_file)
 
-            os.remove(picture_file)
+        # upload pictures taken and newest chart to Google Drive
+        if loop_time.minute % 30 == 0:
+            try:
+                for picture in temp_pictures:
+                    g_account.upload_file(
+                        picture, parent_folder=GOOGLE_DRIVE_FOLDER_ID)
 
-        time_taken = datetime.datetime.now() - loop_time
-        time.sleep(45)
+                    os.remove(picture)
+
+                temp_pictures = []
+
+                g_account.upload_file(BOKEH_CHART, parent_folder=CHART_FOLDER_ID, f_id=CHART_ID)
+
+            except Exception as e:
+                print("There was an error uploading to Google. Storing remaining photos and will retry in 30 minutes. Error below.\n")
+                print(e)
+
+
+
+
+        now = datetime.datetime.now()
+
+        time_taken = now - loop_time
+        print('Loop took {} seconds.'.format(time_taken.seconds))
+        print('Sleeping {} seconds...'.format(60 - now.second))
+        time.sleep(60 - now.second)
 
 if __name__ == '__main__':
     main()
