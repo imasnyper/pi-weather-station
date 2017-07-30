@@ -15,11 +15,13 @@ import csv
 
 import random
 
+
 def create_dummy_data():
     temps = [random.randint(0, 35) for _ in range(10)]
     humidities = [random.uniform(0.0, 99.9) for _ in range(10)]
 
     return list(zip(temps, humidities))
+
 
 def export_csv(file, data):
     print(data)
@@ -28,6 +30,7 @@ def export_csv(file, data):
         for d in data:
             writer.writerow(['{}'.format(d[0])])
             writer.writerow(['{}'.format(d[1])])
+
 
 def import_csv(file):
     data = []
@@ -42,6 +45,7 @@ def import_csv(file):
 def pickle_data(file, data):
     with open(file, 'wb') as f:
         pickle.dump(data, f)
+
 
 def unpickle_data(file):
     with open(file, 'rb') as f:

@@ -30,9 +30,11 @@ CHART_FOLDER_ID = '0B9LUnfJLTYXLSGFCY3J5WU9PNTg'
 CHART_ID = '0B9LUnfJLTYXLMzdvYjdsU29QU2M'
 BOKEH_CHART = 'tempumidity.html'
 
+
 def pickle_data(data, data_file):
     with open(data_file, 'wb') as f:
         pickle.dump(data, f)
+
 
 def unpickle_data(data_file):
     data_list = []
@@ -42,6 +44,7 @@ def unpickle_data(data_file):
             data_list.append(d)
 
     return data_list
+
 
 def bokeh_plot(data_list):
     output_file(BOKEH_CHART, title='Temp and Humidity at the House')
@@ -133,6 +136,7 @@ class Camera:
 
         return length
 
+
 def main():
     # gauth, drive = do_auth()
     g_account = G_Account()
@@ -169,13 +173,17 @@ def main():
         loop_time = datetime.datetime.now()
 
         humidity, dht_temp = t_h_sensor.read()
+        print("DHT Humidity: {}\nDHT Temperature: {}".format(
+            humidity, dht_temp))
 
         t_p_sensor.reg_check()
         bmp_temp, pressure, altitude = t_p_sensor.read()
+        print("BMP Temperature: {}\nBMP Pressure: {}".format(
+            bmp_temp, pressure
+        ))
 
-        temp = (dht_temp + bmp_temp) / 2
-
-        if humidity is not None and dht_temp is not None:
+        if humidity is not None and dht_temp is not None and bmp_temp is not None and pressure is not None:
+            temp = (dht_temp + bmp_temp) / 2
             print(('{0:%d-%m-%y %X} - '
                    'Temperature = {1:0.1f}*\tHumidity = {2:0.1f}%\tPressure = {3:0.2f} '
                    'mbar').format(
@@ -214,9 +222,6 @@ def main():
             except Exception as e:
                 print("There was an error uploading to Google. Storing remaining photos and will retry in 30 minutes. Error below.\n")
                 print(e)
-
-
-
 
         now = datetime.datetime.now()
 
