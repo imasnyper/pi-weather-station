@@ -207,6 +207,8 @@ def main():
             temp_pictures.append(picture_file)
 
         # upload pictures taken and newest chart to Google Drive
+        # TODO: Move this to function. Apply threading to file uploads...
+        # Seen here: https://stackoverflow.com/questions/7168508/background-function-in-python
         if loop_time.minute % 30 == 0:
             try:
                 for picture in temp_pictures:
