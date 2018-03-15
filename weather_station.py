@@ -3,15 +3,12 @@ import datetime
 
 import pickle
 
+from astral import Astral
+
 from picamera import PiCamera
 
 from bokeh.plotting import figure, output_file, save
-from bokeh.models.ranges import DataRange1d
-from bokeh.models import LinearAxis
 from bokeh.layouts import column
-from bokeh.io import export_png
-
-import sqlite3
 
 from sensors import DHT22, BMP280
 
@@ -29,6 +26,8 @@ GOOGLE_DRIVE_FOLDER_ID = '0B9LUnfJLTYXLZEItVXdnZFJwN3c'
 CHART_FOLDER_ID = '0B9LUnfJLTYXLSGFCY3J5WU9PNTg'
 CHART_ID = '0B9LUnfJLTYXLMzdvYjdsU29QU2M'
 BOKEH_CHART = 'tempumidity.html'
+
+CITY_NAME = 'Ottawa'
 
 
 def pickle_data(data, data_file):
@@ -138,9 +137,13 @@ class Camera:
 
 
 def main():
-    # gauth, drive = do_auth()
     g_account = G_Account()
-    drive_plot_file_id = None
+
+    timezone = datetime.timezone(-datetime.timedelta(hours=5))
+
+    a = Astral()
+
+    city = a[CITY_NAME]
 
     temp_pictures = []
 
@@ -169,8 +172,10 @@ def main():
 
     while True:
         # video_taken = False
-
         loop_time = datetime.datetime.now()
+        loop_time_tz = datetime.datetime.now(tz=timezone)
+
+        sun = city.sun(date=loop_time, local=True)
 
         humidity, dht_temp = t_h_sensor.read()
         print("DHT Humidity: {}\nDHT Temperature: {}".format(
@@ -200,11 +205,14 @@ def main():
         else:
             print('Failed to get reading.')
 
-        # take picture every 5 minutes on the fifth minute.
-        if loop_time.minute % 5 == 0:
-            picture_file = camera.take_picture()
+        time_offset = datetime.timedelta(minutes=29)
 
-            temp_pictures.append(picture_file)
+        # take picture every 5 minutes on the fifth minute, between the hours of dusk and dawn.
+        if sun['dawn'] + time_offset <= loop_time_tz <= sun['dusk'] + time_offset:
+            if loop_time.minute % 5 == 0:
+                picture_file = camera.take_picture()
+
+                temp_pictures.append(picture_file)
 
         # upload pictures taken and newest chart to Google Drive
         if loop_time.minute % 30 == 0:
