@@ -147,6 +147,8 @@ def main():
 
     temp_pictures = []
 
+    loop_wait = 60 * 5
+
     try:
         l = unpickle_data(DATA_FILE)
     except FileNotFoundError:
@@ -217,28 +219,30 @@ def main():
         # upload pictures taken and newest chart to Google Drive
         # TODO: Move this to function. Apply threading to file uploads...
         # Seen here: https://stackoverflow.com/questions/7168508/background-function-in-python
-        if loop_time.minute % 30 == 0:
-            try:
-                for picture in temp_pictures:
-                    g_account.upload_file(
-                        picture, parent_folder=GOOGLE_DRIVE_FOLDER_ID)
 
-                    os.remove(picture)
 
-                temp_pictures = []
+        # if loop_time.minute % 30 == 0:
+        #     try:
+        #         for picture in temp_pictures:
+        #             g_account.upload_file(
+        #                 picture, parent_folder=GOOGLE_DRIVE_FOLDER_ID)
 
-                g_account.upload_file(BOKEH_CHART, parent_folder=CHART_FOLDER_ID, f_id=CHART_ID)
+        #             os.remove(picture)
 
-            except Exception as e:
-                print("There was an error uploading to Google. Storing remaining photos and will retry in 30 minutes. Error below.\n")
-                print(e)
+        #         temp_pictures = []
+
+        #         g_account.upload_file(BOKEH_CHART, parent_folder=CHART_FOLDER_ID, f_id=CHART_ID)
+
+        #     except Exception as e:
+        #         print("There was an error uploading to Google. Storing remaining photos and will retry in 30 minutes. Error below.\n")
+        #         print(e)
 
         now = datetime.datetime.now()
 
         time_taken = now - loop_time
         print('Loop took {} seconds.'.format(time_taken.seconds))
-        print('Sleeping {} seconds...'.format(60 - now.second))
-        time.sleep(60 - now.second)
+        print('Sleeping {} seconds...'.format(loop_wait - now.second))
+        time.sleep(loop_wait - now.second)
 
 if __name__ == '__main__':
     main()
