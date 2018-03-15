@@ -137,7 +137,7 @@ class Camera:
 
 
 def main():
-    g_account = G_Account()
+    # g_account = G_Account()
 
     timezone = datetime.timezone(-datetime.timedelta(hours=5))
 
