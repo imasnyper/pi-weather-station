@@ -3,13 +3,16 @@ import datetime
 import os
 import os.path
 import pickle
+import argparse
+import requests
+import os
+import os.path
+import random
 
 from astral import Astral
 from picamera import PiCamera
 from bokeh.plotting import figure, output_file, save
 from bokeh.layouts import column
-
-from sensors import DHT22, BMP280
 
 # from pydrive.auth import GoogleAuth
 # from pydrive.drive import GoogleDrive
@@ -132,7 +135,17 @@ class Camera:
         return length
 
 
-def main():
+def generate_random():
+    dht_temp = random.uniform(-20.0, 35.0)
+    bmp_temp = random.uniform(-20.0, 35.0)
+    humidity = random.uniform(0.0, 100.0)
+    pressure = random.uniform(950.0, 1100.0)
+    altitude = random.uniform(0.0, 100.0)
+
+    return dht_temp, bmp_temp, humidity, pressure, altitude
+
+
+def main(debug=False):
     # g_account = G_Account()
 
     timezone = datetime.timezone(-datetime.timedelta(hours=5))
@@ -143,30 +156,26 @@ def main():
 
     temp_pictures = []
 
-    loop_wait = 60 * 5
+    loop_wait = 60 * 1
+
+    unposted = []
 
     try:
         l = unpickle_data(DATA_FILE)
     except FileNotFoundError:
         l = []
-    t_h_sensor = DHT22()
-    t_p_sensor = BMP280()
-    camera = Camera()
 
-    chip_id, chip_version = t_p_sensor.read_id()
+    if not DEBUG:
+        t_h_sensor = DHT22()
+        t_p_sensor = BMP280()
+        camera = Camera()
 
-    if not chip_id == 88:
-        print("Error")
-        print("Chip ID     : %d" % chip_id)
-        print("Version     : %d" % chip_version)
+        chip_id, chip_version = t_p_sensor.read_id()
 
-    # picture_path = camera.take_picture()
-    # g_account.upload_file(
-    #     picture_path, parent_folder=GOOGLE_DRIVE_FOLDER_ID)
-    # os.remove(picture_path)
-    #
-    # old_picture_time = datetime.datetime.now()
-    # picture_delay = datetime.timedelta(minutes=10)
+        if not chip_id == 88:
+            print("Error")
+            print("Chip ID     : %d" % chip_id)
+            print("Version     : %d" % chip_version)
 
     while True:
         # video_taken = False
@@ -175,15 +184,18 @@ def main():
 
         sun = city.sun(date=loop_time, local=True)
 
-        humidity, dht_temp = t_h_sensor.read()
-        print("DHT Humidity: {}\nDHT Temperature: {}".format(
-            humidity, dht_temp))
+        if not DEBUG:
+            humidity, dht_temp = t_h_sensor.read()
+            print("DHT Humidity: {}\nDHT Temperature: {}".format(
+                humidity, dht_temp))
 
-        t_p_sensor.reg_check()
-        bmp_temp, pressure, altitude = t_p_sensor.read()
-        print("BMP Temperature: {}\nBMP Pressure: {}".format(
-            bmp_temp, pressure
-        ))
+            t_p_sensor.reg_check()
+            bmp_temp, pressure, altitude = t_p_sensor.read()
+            print("BMP Temperature: {}\nBMP Pressure: {}".format(
+                bmp_temp, pressure
+            ))
+        else:
+            dht_temp, bmp_temp, humidity, pressure, altitude = generate_random()
 
         if humidity is not None and dht_temp is not None and bmp_temp is not None and pressure is not None:
             temp = (dht_temp + bmp_temp) / 2
@@ -200,38 +212,34 @@ def main():
 
             pickle_data(l, DATA_FILE)
 
+            payload = {
+                "temperature": temp,
+                "humidity": humidity,
+                "pressure": pressure,
+                "date_time": loop_time.strftime("%Y-%m-%d %H:%M:%S")
+            }
+
+            try:
+                r = requests.post('http://127.0.0.1:8000/api/add_reading', data=payload)
+                print(r)
+                for payload in unposted:
+                    r = requests.post('http://127.0.0.1:8000/api/add_reading', data=payload)
+                    print(r)
+            except requests.exceptions.ConnectionError:
+                print("Connection to site could not be made. Storing readings to upload next time")
+                unposted.append(payload)
         else:
             print('Failed to get reading.')
 
         time_offset = datetime.timedelta(minutes=29)
 
-        # take picture every 5 minutes on the fifth minute, between the hours of dusk and dawn.
-        if sun['dawn'] + time_offset <= loop_time_tz <= sun['dusk'] + time_offset:
-            if loop_time.minute % 5 == 0:
-                picture_file = camera.take_picture()
+        if not DEBUG:
+            # take picture every 5 minutes on the fifth minute, between the hours of dusk and dawn.
+            if sun['dawn'] + time_offset <= loop_time_tz <= sun['dusk'] + time_offset:
+                if loop_time.minute % 5 == 0:
+                    picture_file = camera.take_picture()
 
-                temp_pictures.append(picture_file)
-
-        # upload pictures taken and newest chart to Google Drive
-        # TODO: Move this to function. Apply threading to file uploads...
-        # Seen here: https://stackoverflow.com/questions/7168508/background-function-in-python
-
-
-        # if loop_time.minute % 30 == 0:
-        #     try:
-        #         for picture in temp_pictures:
-        #             g_account.upload_file(
-        #                 picture, parent_folder=GOOGLE_DRIVE_FOLDER_ID)
-
-        #             os.remove(picture)
-
-        #         temp_pictures = []
-
-        #         g_account.upload_file(BOKEH_CHART, parent_folder=CHART_FOLDER_ID, f_id=CHART_ID)
-
-        #     except Exception as e:
-        #         print("There was an error uploading to Google. Storing remaining photos and will retry in 30 minutes. Error below.\n")
-        #         print(e)
+                    temp_pictures.append(picture_file)
 
         now = datetime.datetime.now()
 
@@ -241,4 +249,14 @@ def main():
         time.sleep(loop_wait - now.second)
 
 if __name__ == '__main__':
-    main()
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--debug", help="turn debug on", action="store_true")
+    args = parser.parse_args()
+
+    DEBUG = args.debug
+
+    if not DEBUG:
+        from picamera import PiCamera
+        from sensors import DHT22, BMP280
+        
+    main(debug=DEBUG)
