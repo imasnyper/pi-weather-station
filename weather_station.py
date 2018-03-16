@@ -1,12 +1,11 @@
 import time
 import datetime
-
+import os
+import os.path
 import pickle
 
 from astral import Astral
-
 from picamera import PiCamera
-
 from bokeh.plotting import figure, output_file, save
 from bokeh.layouts import column
 
@@ -14,10 +13,7 @@ from sensors import DHT22, BMP280
 
 # from pydrive.auth import GoogleAuth
 # from pydrive.drive import GoogleDrive
-from mydrive import G_Account
-
-import os
-import os.path
+# from mydrive import G_Account
 
 DATA_FILE = 'tempumidity.pickle'
 
