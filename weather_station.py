@@ -21,8 +21,6 @@ from requests_toolbelt.multipart.encoder import MultipartEncoder
 
 DATA_FILE = 'tempumidity.pickle'
 
-GOOGLE_DRIVE_FOLDER_ID = '0B9LUnfJLTYXLZEItVXdnZFJwN3c'
-
 CHART_FOLDER_ID = '0B9LUnfJLTYXLSGFCY3J5WU9PNTg'
 CHART_ID = '0B9LUnfJLTYXLMzdvYjdsU29QU2M'
 BOKEH_CHART = 'tempumidity.html'
@@ -98,8 +96,8 @@ class Camera:
 
         self.camera.resolution = resolution
         self.framerate = framerate
-        self.camera.vflip = True
-        self.camera.hflip = True
+        self.camera.vflip = False
+        self.camera.hflip = False
         self.filename = 'image-{}.jpeg'.format(
             datetime.datetime.now().strftime('%d-%m-%y %X'))
         self.path = os.path.join('/home/pi/Dev/pi-weather-station/pics/', self.filename)
@@ -158,6 +156,9 @@ def main(debug=False, camera=False):
     temp_pictures = []
 
     loop_wait = 60 * 1
+
+    PICTURE_WAIT_MINUTES = 1
+
 
     unposted = []
     unposted_photos = []
@@ -238,7 +239,7 @@ def main(debug=False, camera=False):
         if CAMERA:
             # take picture every 5 minutes on the fifth minute, between the hours of dusk and dawn.
             if sun['dawn'] + time_offset <= loop_time_tz <= sun['dusk'] + time_offset:
-                if loop_time.minute % 30 == 0:
+                if loop_time.minute % PICTURE_WAIT_MINUTES == 0:
                     picture_file = camera.take_picture()
 
                     try:
