@@ -216,14 +216,14 @@ def main(debug=False):
                 "temperature": temp,
                 "humidity": humidity,
                 "pressure": pressure,
-                "date_time": loop_time.strftime("%Y-%m-%d %H:%M:%S")
+                "date_time": loop_time.strftime("%Y-%m-%dT%H:%M:%S")
             }
 
             try:
-                r = requests.post('http://127.0.0.1:8000/api/add_reading', data=payload)
+                r = requests.post('https://cottagevane.herokuapp.com/api/add_reading', data=payload)
                 print(r)
                 for payload in unposted:
-                    r = requests.post('http://127.0.0.1:8000/api/add_reading', data=payload)
+                    r = requests.post('https://cottagevane.herokuapp/api/add_reading', data=payload)
                     print(r)
             except requests.exceptions.ConnectionError:
                 print("Connection to site could not be made. Storing readings to upload next time")
