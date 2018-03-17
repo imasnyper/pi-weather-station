@@ -160,6 +160,7 @@ def main(debug=False, camera=False):
     loop_wait = 60 * 1
 
     unposted = []
+    unposted _photos = []
 
     try:
         l = unpickle_data(DATA_FILE)
