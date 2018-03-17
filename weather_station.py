@@ -160,7 +160,7 @@ def main(debug=False, camera=False):
     loop_wait = 60 * 1
 
     unposted = []
-    unposted _photos = []
+    unposted_photos = []
 
     try:
         l = unpickle_data(DATA_FILE)
@@ -238,7 +238,7 @@ def main(debug=False, camera=False):
         if CAMERA:
             # take picture every 5 minutes on the fifth minute, between the hours of dusk and dawn.
             if sun['dawn'] + time_offset <= loop_time_tz <= sun['dusk'] + time_offset:
-                if loop_time.minute % 5 == 0:
+                if loop_time.minute % 1 == 0:
                     picture_file = camera.take_picture()
 
                     try:
