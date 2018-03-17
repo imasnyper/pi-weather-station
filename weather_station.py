@@ -244,14 +244,7 @@ def main(debug=False, camera=False):
                     try:
                         multipart_data = MultipartEncoder(
                             fields={
-                                "uploadId": "001",
-                                "mtype": "1000",
-                                "extensions": "png,gif",
-                                "minPixSize": "1000",
-                                "masterSize": "",
-                                "masterWidth": "",
-                                "masterHeight": "",
-                                "data": (
+                                "photo": (
                                     picture_file,
                                     open(picture_file, "rb"),
                                     "image/jpeg"
