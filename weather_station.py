@@ -157,7 +157,7 @@ def main(debug=False, camera=False):
 
     loop_wait = 60 * 1
 
-    PICTURE_WAIT_MINUTES = 1
+    PICTURE_WAIT_MINUTES = 10
 
 
     unposted = []
