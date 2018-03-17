@@ -145,7 +145,7 @@ def generate_random():
     return dht_temp, bmp_temp, humidity, pressure, altitude
 
 
-def main(debug=False):
+def main(debug=False, camera=False):
     # g_account = G_Account()
 
     timezone = datetime.timezone(-datetime.timedelta(hours=5))
@@ -233,7 +233,7 @@ def main(debug=False):
 
         time_offset = datetime.timedelta(minutes=29)
 
-        if not DEBUG:
+        if CAMERA:
             # take picture every 5 minutes on the fifth minute, between the hours of dusk and dawn.
             if sun['dawn'] + time_offset <= loop_time_tz <= sun['dusk'] + time_offset:
                 if loop_time.minute % 5 == 0:
@@ -251,12 +251,14 @@ def main(debug=False):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("--debug", help="turn debug on", action="store_true")
+    parser.add_argument("--camera", help="turn camera on", action="store_true")
     args = parser.parse_args()
 
     DEBUG = args.debug
+    CAMERA = args.camera
 
     if not DEBUG:
         from picamera import PiCamera
         from sensors import DHT22, BMP280
         
-    main(debug=DEBUG)
+    main(debug=DEBUG, camera=CAMERA)
