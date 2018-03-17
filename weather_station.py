@@ -4,7 +4,6 @@ import os
 import os.path
 import pickle
 import argparse
-import requests
 import os
 import os.path
 import random
@@ -13,6 +12,8 @@ from astral import Astral
 from picamera import PiCamera
 from bokeh.plotting import figure, output_file, save
 from bokeh.layouts import column
+import requests
+from requests_toolbelt.multipart.encoder import MultipartEncoder
 
 # from pydrive.auth import GoogleAuth
 # from pydrive.drive import GoogleDrive
@@ -239,7 +240,36 @@ def main(debug=False, camera=False):
                 if loop_time.minute % 5 == 0:
                     picture_file = camera.take_picture()
 
-                    temp_pictures.append(picture_file)
+                    try:
+                        multipart_data = MultipartEncoder(
+                            fields={
+                                "data": (
+                                    picture_file,
+                                    open(picture_file, "rb"),
+                                    "image/jpeg"
+                                )
+                            }
+                        )
+                        r = requests.post(
+                            'https://cottagevane.herokuapp.com/api/add_photo', 
+                            headers={
+                                "Content-Type": multipart_data.content_type,
+                            },
+                            data=multipart_data,
+                        )
+                        print(r)
+                        for multipart_data in unposted_photos:
+                            r = requests.post(
+                                'https://cottagevane.herokuapp.com/api/add_photo', 
+                                headers={
+                                    "Content-Type": multipart_data.content_type,
+                                },
+                                data=multipart_data,
+                            )
+                            print(r)
+                    except requests.exceptions.ConnectionError:
+                        print("Connection to site could not be made. Storing readings to upload next time")
+                        unposted_photos.append(multipart_data)
 
         now = datetime.datetime.now()
 
