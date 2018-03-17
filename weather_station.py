@@ -258,7 +258,7 @@ def main(debug=False, camera=False):
                             },
                             data=multipart_data,
                         )
-                        print(r)
+                        print(r.text)
                         for multipart_data in unposted_photos:
                             r = requests.post(
                                 'https://cottagevane.herokuapp.com/api/add_photo', 
@@ -267,7 +267,7 @@ def main(debug=False, camera=False):
                                 },
                                 data=multipart_data,
                             )
-                            print(r)
+                            print(r.text)
                     except requests.exceptions.ConnectionError:
                         print("Connection to site could not be made. Storing readings to upload next time")
                         unposted_photos.append(multipart_data)
