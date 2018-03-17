@@ -3,3 +3,4 @@ client_id.json
 tempumidity.html
 tempumidity.pickle
 __pycache__
+venv/*
