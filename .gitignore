@@ -4,3 +4,5 @@ tempumidity.html
 tempumidity.pickle
 __pycache__
 venv/*
+nohup.out
+pics
