@@ -237,6 +237,7 @@ def main(debug=False, camera=False):
             print('Failed to get reading.')
 
         if CAMERA:
+            picture_file = None
             if sunrise_time == loop_time_tz_rounded or sunset_time == loop_time_tz_rounded:
                 picture_file = camera.take_picture()
             # take picture every 5 minutes on the fifth minute, between the hours of dusk and dawn.
@@ -244,7 +245,7 @@ def main(debug=False, camera=False):
                 if loop_time.minute % PICTURE_WAIT_MINUTES == 0:
                     picture_file = camera.take_picture()
 
-            if not DEBUG:
+            if not DEBUG and picture_file:
                 result = upload_photo(picture_file)
                 if type(result) == type(1):
                     if unposted_photos.lenth() > 0:
