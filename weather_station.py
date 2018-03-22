@@ -248,7 +248,7 @@ def main(debug=False, camera=False):
             if not DEBUG and picture_file:
                 result = upload_photo(picture_file)
                 if type(result) == type(1):
-                    if unposted_photos.length() > 0:
+                    if len(unposted_photos) > 0:
                         unposted_photos = upload_photos()
                 if type(result) != type(1):
                     unposted_photos.append(result)
