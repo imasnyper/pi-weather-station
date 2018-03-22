@@ -237,7 +237,7 @@ def main(debug=False, camera=False):
             print('Failed to get reading.')
 
         if CAMERA:
-            if sunrise_time == loop_time_rounded or sunset_time == loop_time_rounded:
+            if sunrise_time == loop_time_tz_rounded or sunset_time == loop_time_tz_rounded:
                 picture_file = camera.take_picture()
             # take picture every 5 minutes on the fifth minute, between the hours of dusk and dawn.
             if sunrise_time <= loop_time_tz_rounded <= sunset_time:
