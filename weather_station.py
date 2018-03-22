@@ -217,10 +217,6 @@ def main(debug=False, camera=False):
 
             l.append(tup)
 
-            bokeh_plot(l)
-
-            pickle_data(l, DATA_FILE)
-
             payload = {
                 "temperature": temp,
                 "humidity": humidity,
