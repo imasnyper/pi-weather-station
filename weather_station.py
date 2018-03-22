@@ -9,9 +9,6 @@ import os.path
 import random
 
 from astral import Astral
-from picamera import PiCamera
-from bokeh.plotting import figure, output_file, save
-from bokeh.layouts import column
 import requests
 from requests_toolbelt.multipart.encoder import MultipartEncoder
 
@@ -41,50 +38,6 @@ def unpickle_data(data_file):
             data_list.append(d)
 
     return data_list
-
-
-def bokeh_plot(data_list):
-    output_file(BOKEH_CHART, title='Temp and Humidity at the House')
-
-    date_times = [d[0] for d in data_list]
-    temps = [d[1] for d in data_list]
-    humidities = [d[2] for d in data_list]
-    pressures = [d[3] for d in data_list]
-
-    sp1 = figure(
-        width=800,
-        height=250,
-        x_axis_type='datetime',
-        title='Temperature',
-        y_axis_label='Degrees Celcius'
-    )
-    sp1.line(date_times, temps, color='red')
-
-    sp2 = figure(
-        width=800,
-        height=250,
-        x_range=sp1.x_range,
-        x_axis_type='datetime',
-        title='Humidity',
-        x_axis_label='Date/Time',
-        y_axis_label='Percent',
-    )
-    sp2.line(date_times, humidities, color='darkblue')
-
-    sp3 = figure(
-        width=800,
-        height=250,
-        x_range=sp1.x_range,
-        x_axis_type='datetime',
-        title='Pressure',
-        x_axis_label='Date/Time',
-        y_axis_label='mbar',
-    )
-    sp3.line(date_times, pressures, color='purple')
-
-    p = column(children=[sp1, sp2, sp3], sizing_mode="stretch_both")
-
-    save(p)
 
 
 class Camera:
@@ -123,7 +76,7 @@ class Camera:
 
         time.sleep(3)
 
-        self.camera.start_recording(('/home/pi/Dev/weather_station/videos/'
+        self.camera.start_recording(('/home/pi/Dev/pi-weather-station/videos/'
                                      'video-{}.h264').format(
                                          datetime.datetime.now().strftime(
                                              '%d-%m-%y %X')))
@@ -142,6 +95,56 @@ def generate_random():
     altitude = random.uniform(0.0, 100.0)
 
     return dht_temp, bmp_temp, humidity, pressure, altitude
+
+
+def upload_photo(picture_file):
+    try:
+        multipart_data = MultipartEncoder(
+            fields={
+                "photo": (
+                    picture_file,
+                    open(picture_file, "rb"),
+                    "image/jpeg"
+                )
+            }
+        )
+        r = requests.post(
+            'https://cottagevane.herokuapp.com/api/add_photo', 
+            headers={
+                "Content-Type": multipart_data.content_type,
+            },
+            data=multipart_data,
+        )
+        if r.status_code == 200:
+            os.remove(picture_file)
+            return r.status_code
+        else:
+            return picture_file
+
+    except requests.exceptions.ConnectionError:
+        print("Connection to site could not be made. Storing readings to upload next time")
+        return picture_file
+
+
+def upload_photos(picture_files):
+    for picture in picture_files:
+        result = upload_photo(picture)
+        if type(result) != type(1):
+            return picture_files
+
+    return []
+
+
+def round_time(dt=None, roundTo=60):
+   """Round a datetime object to any time laps in seconds
+   dt : datetime.datetime object, default now.
+   roundTo : Closest number of seconds to round to, default 1 minute.
+   Author: Thierry Husson 2012 - Use it as you want but don't blame me.
+   """
+   if dt == None : dt = datetime.datetime.now()
+   seconds = (dt.replace(tzinfo=None) - dt.min).seconds
+   rounding = (seconds+roundTo/2) // roundTo * roundTo
+   return dt + datetime.timedelta(0,rounding-seconds,-dt.microsecond)
 
 
 def main(debug=False, camera=False):
@@ -183,9 +186,12 @@ def main(debug=False, camera=False):
     while True:
         # video_taken = False
         loop_time = datetime.datetime.now()
-        loop_time_tz = datetime.datetime.now(tz=timezone)
+        loop_time_tz_rounded = round_time(datetime.datetime.now(tz=timezone))
 
         sun = city.sun(date=loop_time, local=True)
+        time_offset = datetime.timedelta(minutes=29)
+        sunrise_time = round_time(sun['dawn'] + time_offset)
+        sunset_time = round_time(sun['dusk'] + time_offset)
 
         if not DEBUG:
             humidity, dht_temp = t_h_sensor.read()
@@ -234,44 +240,22 @@ def main(debug=False, camera=False):
         else:
             print('Failed to get reading.')
 
-        time_offset = datetime.timedelta(minutes=29)
-
         if CAMERA:
+            if sunrise_time == loop_time_rounded or sunset_time == loop_time_rounded:
+                picture_file = camera.take_picture()
             # take picture every 5 minutes on the fifth minute, between the hours of dusk and dawn.
-            if sun['dawn'] + time_offset <= loop_time_tz <= sun['dusk'] + time_offset:
+            if sunrise_time <= loop_time_tz_rounded <= sunset_time:
                 if loop_time.minute % PICTURE_WAIT_MINUTES == 0:
                     picture_file = camera.take_picture()
 
-                    try:
-                        multipart_data = MultipartEncoder(
-                            fields={
-                                "photo": (
-                                    picture_file,
-                                    open(picture_file, "rb"),
-                                    "image/jpeg"
-                                )
-                            }
-                        )
-                        r = requests.post(
-                            'https://cottagevane.herokuapp.com/api/add_photo', 
-                            headers={
-                                "Content-Type": multipart_data.content_type,
-                            },
-                            data=multipart_data,
-                        )
-                        print(r.text)
-                        for multipart_data in unposted_photos:
-                            r = requests.post(
-                                'https://cottagevane.herokuapp.com/api/add_photo', 
-                                headers={
-                                    "Content-Type": multipart_data.content_type,
-                                },
-                                data=multipart_data,
-                            )
-                            print(r.text)
-                    except requests.exceptions.ConnectionError:
-                        print("Connection to site could not be made. Storing readings to upload next time")
-                        unposted_photos.append(multipart_data)
+            if not DEBUG:
+                result = upload_photo(picture_file)
+                if type(result) == type(1):
+                    if unposted_photos.lenth() > 0:
+                        unposted_photos = upload_photos()
+                if type(result) != type(1):
+                    unposted_photos.append(result)
+
 
         now = datetime.datetime.now()
 
