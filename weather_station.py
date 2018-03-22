@@ -115,7 +115,7 @@ def upload_photo(picture_file):
             },
             data=multipart_data,
         )
-        if r.status_code == 200:
+        if r.status_code == 201:
             os.remove(picture_file)
             return r.status_code
         else:
