@@ -9,6 +9,7 @@ import os.path
 import random
 
 from astral import Location
+import pytz
 import requests
 from requests_toolbelt.multipart.encoder import MultipartEncoder
 
@@ -185,6 +186,7 @@ def main(debug=False, camera=False):
     while True:
         # video_taken = False
         loop_time = datetime.datetime.now()
+        loop_time_aware = pytz.timezone('Canada/Eastern').localize(loop_time)
 
         dawn_time = windsor.dawn()
         sunrise_time = windsor.sunrise()
@@ -225,14 +227,14 @@ def main(debug=False, camera=False):
             picture_file = None
             # take picture every 5 minutes on the fifth minute, between the 
             # hours of dawn and sunrise, and dusk and sunset
-            if dusk_time <= loop_time <= sunrise_time \
-                    or dusk_time <= loop_time <= sunset_time:
+            if dusk_time <= loop_time_aware <= sunrise_time \
+                    or dusk_time <= loop_time_aware <= sunset_time:
                 if not last_sun_picture or \
-                        ((loop_time - last_sun_picture).seconds // 60 > 3):
+                        ((loop_time_aware - last_sun_picture).seconds // 60 > 3):
                     picture_file = camera.take_picture()
                     last_sun_picture = loop_time
             
-            if sunrise_time <= loop_time <= sunset_time:
+            if sunrise_time <= loop_time_aware <= sunset_time:
                 if loop_time.minute % PICTURE_WAIT_MINUTES == 0:
                     picture_file = camera.take_picture()
 
