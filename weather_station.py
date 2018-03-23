@@ -73,7 +73,7 @@ def generate_random():
     return dht_temp, bmp_temp, humidity, pressure, altitude
 
 
-def upload_reading(**kwargs):
+def upload_reading(unposted, **kwargs):
     payload = {
         "temperature": kwargs['temp'],
         "humidity": kwargs['humidity'],
@@ -213,7 +213,7 @@ def main(debug=False, camera=False):
                    'Pressure = {3:0.2f} '
                    'mbar').format(loop_time, temp, humidity, pressure, altitude))
 
-            upload_reading(time=loop_time, temp=temp, humidity=humidity, 
+            upload_reading(unposted, time=loop_time, temp=temp, humidity=humidity, 
                 pressure=pressure)
 
         else:
