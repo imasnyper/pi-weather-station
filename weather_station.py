@@ -191,6 +191,8 @@ def main(debug=False, camera=False):
         dusk_time = windsor.dusk()
         sunset_time = windsor.sunset()
 
+        print((loop_time, dusk_time))
+
         if not DEBUG:
             humidity, dht_temp = t_h_sensor.read()
             print("DHT Humidity: {}\nDHT Temperature: {}".format(
