@@ -8,36 +8,11 @@ import os
 import os.path
 import random
 
-from astral import Astral
+from astral import Location
 import requests
 from requests_toolbelt.multipart.encoder import MultipartEncoder
 
-# from pydrive.auth import GoogleAuth
-# from pydrive.drive import GoogleDrive
-# from mydrive import G_Account
-
 DATA_FILE = 'tempumidity.pickle'
-
-CHART_FOLDER_ID = '0B9LUnfJLTYXLSGFCY3J5WU9PNTg'
-CHART_ID = '0B9LUnfJLTYXLMzdvYjdsU29QU2M'
-BOKEH_CHART = 'tempumidity.html'
-
-CITY_NAME = 'Ottawa'
-
-
-def pickle_data(data, data_file):
-    with open(data_file, 'wb') as f:
-        pickle.dump(data, f)
-
-
-def unpickle_data(data_file):
-    data_list = []
-    with open(data_file, 'rb') as f:
-        data = pickle.load(f)
-        for d in data:
-            data_list.append(d)
-
-    return data_list
 
 
 class Camera:
@@ -53,7 +28,8 @@ class Camera:
         self.camera.hflip = False
         self.filename = 'image-{}.jpeg'.format(
             datetime.datetime.now().strftime('%d-%m-%y %X'))
-        self.path = os.path.join('/home/pi/Dev/pi-weather-station/pics/', self.filename)
+        self.path = os.path.join('/home/pi/Dev/pi-weather-station/pics/', 
+            self.filename)
 
         self.camera.start_preview()
 
@@ -97,7 +73,32 @@ def generate_random():
     return dht_temp, bmp_temp, humidity, pressure, altitude
 
 
+def upload_reading(**kwargs):
+    payload = {
+        "temperature": kwargs['temp'],
+        "humidity": kwargs['humidity'],
+        "pressure": kwargs['pressure'],
+        "date_time": kwargs['time'].strftime("%Y-%m-%dT%H:%M:%S")
+    }
+
+    try:
+        r = requests.post('https://cottagevane.herokuapp.com/api/add_reading', 
+            data=payload)
+        print(r)
+        for payload in unposted:
+            r = requests.post('https://cottagevane.herokuapp/api/add_reading', 
+                data=payload)
+            print(r)
+    except requests.exceptions.ConnectionError:
+        print("Connection to site could not be made."
+            " Storing readings to upload next time")
+        unposted.append(payload)
+
+
 def upload_photo(picture_file):
+    """Uploads a photo to website with http request
+    Returns 201 if succesful, or the picture file if the upload fails
+    """
     try:
         multipart_data = MultipartEncoder(
             fields={
@@ -150,26 +151,24 @@ def round_time(dt=None, roundTo=60):
 def main(debug=False, camera=False):
     # g_account = G_Account()
 
-    timezone = datetime.timezone(-datetime.timedelta(hours=5))
+    windsor = Location(
+        ('Windsor', 'Ontario', 
+        42.3149, -83.0364, 
+        'Canada/Eastern', 190))
 
-    a = Astral()
-
-    city = a[CITY_NAME]
-
-    temp_pictures = []
+    tobermory = Location(
+        ('Tobermory', 'Ontario',
+        45.2534, -81.6645,
+        'Canada/Eastern', 180))
 
     loop_wait = 60 * 1
 
-    PICTURE_WAIT_MINUTES = 10
-
+    PICTURE_WAIT_MINUTES = 30
 
     unposted = []
     unposted_photos = []
 
-    try:
-        l = unpickle_data(DATA_FILE)
-    except FileNotFoundError:
-        l = []
+    last_sun_picture = None
 
     if not DEBUG:
         t_h_sensor = DHT22()
@@ -186,12 +185,11 @@ def main(debug=False, camera=False):
     while True:
         # video_taken = False
         loop_time = datetime.datetime.now()
-        loop_time_tz_rounded = round_time(datetime.datetime.now(tz=timezone))
 
-        sun = city.sun(date=loop_time, local=True)
-        time_offset = datetime.timedelta(minutes=29)
-        sunrise_time = round_time(sun['dawn'] + time_offset)
-        sunset_time = round_time(sun['dusk'] + time_offset)
+        dawn_time = windosr.dawn()
+        sunrise_time = windsor.sunrise()
+        dusk_time = windsor.dusk()
+        sunset_time = windsor.sunset()
 
         if not DEBUG:
             humidity, dht_temp = t_h_sensor.read()
@@ -206,42 +204,33 @@ def main(debug=False, camera=False):
         else:
             dht_temp, bmp_temp, humidity, pressure, altitude = generate_random()
 
-        if humidity is not None and dht_temp is not None and bmp_temp is not None and pressure is not None:
+        if humidity is not None and dht_temp is not None \
+                and bmp_temp is not None and pressure is not None:
             temp = (dht_temp + bmp_temp) / 2
             print(('{0:%d-%m-%y %X} - '
-                   'Temperature = {1:0.1f}*\tHumidity = {2:0.1f}%\tPressure = {3:0.2f} '
-                   'mbar').format(
-                       loop_time, temp, humidity, pressure, altitude))
+                   'Temperature = {1:0.1f}*\t'
+                   'Humidity = {2:0.1f}%\t'
+                   'Pressure = {3:0.2f} '
+                   'mbar').format(loop_time, temp, humidity, pressure, altitude))
 
-            tup = (loop_time, temp, humidity, pressure)
+            upload_reading(time=loop_time, temp=temp, humidity=humidity, 
+                pressure=pressure)
 
-            l.append(tup)
-
-            payload = {
-                "temperature": temp,
-                "humidity": humidity,
-                "pressure": pressure,
-                "date_time": loop_time.strftime("%Y-%m-%dT%H:%M:%S")
-            }
-
-            try:
-                r = requests.post('https://cottagevane.herokuapp.com/api/add_reading', data=payload)
-                print(r)
-                for payload in unposted:
-                    r = requests.post('https://cottagevane.herokuapp/api/add_reading', data=payload)
-                    print(r)
-            except requests.exceptions.ConnectionError:
-                print("Connection to site could not be made. Storing readings to upload next time")
-                unposted.append(payload)
         else:
             print('Failed to get reading.')
 
         if CAMERA:
             picture_file = None
-            if sunrise_time == loop_time_tz_rounded or sunset_time == loop_time_tz_rounded:
-                picture_file = camera.take_picture()
-            # take picture every 5 minutes on the fifth minute, between the hours of dusk and dawn.
-            if sunrise_time <= loop_time_tz_rounded <= sunset_time:
+            # take picture every 5 minutes on the fifth minute, between the 
+            # hours of dawn and sunrise, and dusk and sunset
+            if dusk_time <= loop_time <= sunrise_time \
+                    or dusk_time <= loop_time <= sunset_time:
+                if not last_sun_picture or \
+                        ((loop_time - last_sun_picture).seconds // 60 > 3):
+                    picture_file = camera.take_picture()
+                    last_sun_picture = loop_time
+            
+            if sunrise_time <= loop_time <= sunset_time:
                 if loop_time.minute % PICTURE_WAIT_MINUTES == 0:
                     picture_file = camera.take_picture()
 
