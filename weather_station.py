@@ -186,7 +186,7 @@ def main(debug=False, camera=False):
         # video_taken = False
         loop_time = datetime.datetime.now()
 
-        dawn_time = windosr.dawn()
+        dawn_time = windsor.dawn()
         sunrise_time = windsor.sunrise()
         dusk_time = windsor.dusk()
         sunset_time = windsor.sunset()
