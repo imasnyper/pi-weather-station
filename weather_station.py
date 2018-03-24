@@ -193,8 +193,6 @@ def main(debug=False, camera=False):
         dusk_time = windsor.dusk()
         sunset_time = windsor.sunset()
 
-        print((loop_time, dusk_time))
-
         if not DEBUG:
             humidity, dht_temp = t_h_sensor.read()
             print("DHT Humidity: {}\nDHT Temperature: {}".format(
@@ -227,8 +225,9 @@ def main(debug=False, camera=False):
             picture_file = None
             # take picture every 5 minutes on the fifth minute, between the 
             # hours of dawn and sunrise, and dusk and sunset
-            if dusk_time <= loop_time_aware <= sunrise_time \
-                    or dusk_time <= loop_time_aware <= sunset_time:
+            if dawn_time <= loop_time_aware <= sunrise_time \
+                    or sunset_time <= loop_time_aware <= dusk_time:
+
                 if not last_sun_picture or \
                         ((loop_time_aware - last_sun_picture).seconds // 60 > 3):
                     picture_file = camera.take_picture()
