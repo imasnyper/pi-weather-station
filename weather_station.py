@@ -231,7 +231,7 @@ def main(debug=False, camera=False):
                 if not last_sun_picture or \
                         ((loop_time_aware - last_sun_picture).seconds // 60 > 3):
                     picture_file = camera.take_picture()
-                    last_sun_picture = loop_time
+                    last_sun_picture = loop_time_aware
             
             if sunrise_time <= loop_time_aware <= sunset_time:
                 if loop_time.minute % PICTURE_WAIT_MINUTES == 0:
