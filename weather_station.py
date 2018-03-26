@@ -8,13 +8,9 @@ import os
 import os.path
 import random
 
-from astral import Location
 import pytz
 import requests
 from requests_toolbelt.multipart.encoder import MultipartEncoder
-
-DATA_FILE = 'tempumidity.pickle'
-
 
 class Camera:
     def __init__(self):
@@ -74,7 +70,7 @@ def generate_random():
     return dht_temp, bmp_temp, humidity, pressure, altitude
 
 
-def upload_reading(unposted, **kwargs):
+def upload_reading(unposted, debug, **kwargs):
     payload = {
         "temperature": kwargs['temp'],
         "humidity": kwargs['humidity'],
@@ -82,12 +78,17 @@ def upload_reading(unposted, **kwargs):
         "date_time": kwargs['time'].strftime("%Y-%m-%dT%H:%M:%S")
     }
 
+    if debug:
+        upload_site = 'http://127.0.0.1:8000/api/add_reading'
+    else:
+        upload_site = 'https://cottagevane.herokuapp.com/api/add_reading'
+
     try:
-        r = requests.post('https://cottagevane.herokuapp.com/api/add_reading', 
+        r = requests.post(upload_site, 
             data=payload)
         print(r)
         for payload in unposted:
-            r = requests.post('https://cottagevane.herokuapp/api/add_reading', 
+            r = requests.post(upload_site, 
                 data=payload)
             print(r)
     except requests.exceptions.ConnectionError:
@@ -100,6 +101,7 @@ def upload_photo(picture_file):
     """Uploads a photo to website with http request
     Returns 201 if succesful, or the picture file if the upload fails
     """
+    upload_site = 'https://cottagevane.herokuapp.com/api/add_photo'
     try:
         multipart_data = MultipartEncoder(
             fields={
@@ -111,7 +113,7 @@ def upload_photo(picture_file):
             }
         )
         r = requests.post(
-            'https://cottagevane.herokuapp.com/api/add_photo', 
+            upload_site, 
             headers={
                 "Content-Type": multipart_data.content_type,
             },
@@ -150,18 +152,6 @@ def round_time(dt=None, roundTo=60):
 
 
 def main(debug=False, camera=False):
-    # g_account = G_Account()
-
-    windsor = Location(
-        ('Windsor', 'Ontario', 
-        42.3149, -83.0364, 
-        'Canada/Eastern', 190))
-
-    tobermory = Location(
-        ('Tobermory', 'Ontario',
-        45.2534, -81.6645,
-        'Canada/Eastern', 180))
-
     loop_wait = 60 * 1
 
     PICTURE_WAIT_MINUTES = 60
@@ -171,7 +161,17 @@ def main(debug=False, camera=False):
 
     last_sun_picture = None
 
-    if not DEBUG:
+    if not debug:
+        windsor = Location(
+            ('Windsor', 'Ontario', 
+            42.3149, -83.0364, 
+            'Canada/Eastern', 190))
+
+        tobermory = Location(
+            ('Tobermory', 'Ontario',
+            45.2534, -81.6645,
+            'Canada/Eastern', 180))
+        
         t_h_sensor = DHT22()
         t_p_sensor = BMP280()
         camera = Camera()
@@ -188,12 +188,12 @@ def main(debug=False, camera=False):
         loop_time = datetime.datetime.now()
         loop_time_aware = pytz.timezone('Canada/Eastern').localize(loop_time)
 
-        dawn_time = windsor.dawn()
-        sunrise_time = windsor.sunrise()
-        dusk_time = windsor.dusk()
-        sunset_time = windsor.sunset()
+        if not debug:
+            dawn_time = windsor.dawn()
+            sunrise_time = windsor.sunrise()
+            dusk_time = windsor.dusk()
+            sunset_time = windsor.sunset()
 
-        if not DEBUG:
             humidity, dht_temp = t_h_sensor.read()
             print("DHT Humidity: {}\nDHT Temperature: {}".format(
                 humidity, dht_temp))
@@ -215,7 +215,7 @@ def main(debug=False, camera=False):
                    'Pressure = {3:0.2f} '
                    'mbar').format(loop_time, temp, humidity, pressure, altitude))
 
-            upload_reading(unposted, time=loop_time, temp=temp, humidity=humidity, 
+            upload_reading(unposted, debug, time=loop_time, temp=temp, humidity=humidity, 
                 pressure=pressure)
 
         else:
@@ -237,7 +237,7 @@ def main(debug=False, camera=False):
                 if loop_time.minute % PICTURE_WAIT_MINUTES == 0:
                     picture_file = camera.take_picture()
 
-            if not DEBUG and picture_file:
+            if not debug and picture_file:
                 result = upload_photo(picture_file)
                 if type(result) == type(1):
                     if len(unposted_photos) > 0:
@@ -265,5 +265,6 @@ if __name__ == '__main__':
     if not DEBUG:
         from picamera import PiCamera
         from sensors import DHT22, BMP280
+        from astral import Location
         
     main(debug=DEBUG, camera=CAMERA)
