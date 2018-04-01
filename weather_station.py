@@ -101,7 +101,7 @@ def upload_photo(picture_file):
     """Uploads a photo to website with http request
     Returns 201 if succesful, or the picture file if the upload fails
     """
-    upload_site = 'https://cottagevane.herokuapp.com/api/add_photo'
+    upload_site = 'http://140.82.60.64/api/add_photo'
     try:
         multipart_data = MultipartEncoder(
             fields={
