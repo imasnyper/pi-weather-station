@@ -81,7 +81,7 @@ def upload_reading(unposted, debug, **kwargs):
     if debug:
         upload_site = 'http://127.0.0.1:8000/api/add_reading'
     else:
-        upload_site = 'http://140.82.60.64/api/add_reading'
+        upload_site = 'http://wasaweather.com/api/add_reading'
 
     try:
         r = requests.post(upload_site, 
@@ -101,7 +101,7 @@ def upload_photo(picture_file):
     """Uploads a photo to website with http request
     Returns 201 if succesful, or the picture file if the upload fails
     """
-    upload_site = 'http://140.82.60.64/api/add_photo'
+    upload_site = 'http://wasaweather.com/api/add_photo'
     try:
         multipart_data = MultipartEncoder(
             fields={
