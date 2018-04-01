@@ -81,7 +81,7 @@ def upload_reading(unposted, debug, **kwargs):
     if debug:
         upload_site = 'http://127.0.0.1:8000/api/add_reading'
     else:
-        upload_site = 'https://cottagevane.herokuapp.com/api/add_reading'
+        upload_site = 'http://140.82.60.64/api/add_reading'
 
     try:
         r = requests.post(upload_site, 
