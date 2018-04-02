@@ -101,6 +101,7 @@ def upload_photo(picture_file):
     """Uploads a photo to website with http request
     Returns 201 if succesful, or the picture file if the upload fails
     """
+    print("Picture size: " + str(os.stat(picture_file).st_size))
     upload_site = 'http://wasaweather.com/api/add_photo'
     try:
         multipart_data = MultipartEncoder(
@@ -119,10 +120,13 @@ def upload_photo(picture_file):
             },
             data=multipart_data,
         )
+        print(r.headers["Content-Length"])
         if r.status_code == 201:
+            print(r.status_code)
             os.remove(picture_file)
             return r.status_code
         else:
+            print(r.status_code)
             return picture_file
 
     except requests.exceptions.ConnectionError:
@@ -234,16 +238,20 @@ def main(debug=False, camera=False):
                     last_sun_picture = loop_time_aware
             
             if sunrise_time <= loop_time_aware <= sunset_time:
-                if loop_time.minute % PICTURE_WAIT_MINUTES == 0:
-                    picture_file = camera.take_picture()
+                picture_file = camera.take_picture()
+		#if loop_time.minute % PICTURE_WAIT_MINUTES == 0:
+                #    picture_file = camera.take_picture()
 
             if not debug and picture_file:
+                print("Picture file created, attempting upload...")
                 result = upload_photo(picture_file)
                 if type(result) == type(1):
                     if len(unposted_photos) > 0:
                         unposted_photos = upload_photos(unposted_photos)
                 if type(result) != type(1):
                     unposted_photos.append(result)
+            else:
+                print("no picture file")
 
 
         now = datetime.datetime.now()
