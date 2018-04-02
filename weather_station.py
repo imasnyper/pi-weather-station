@@ -87,10 +87,11 @@ def upload_reading(unposted, debug, **kwargs):
         r = requests.post(upload_site, 
             data=payload)
         print(r)
-        for payload in unposted:
-            r = requests.post(upload_site, 
-                data=payload)
-            print(r)
+        # for payload in unposted:
+        #     r = requests.post(upload_site, 
+        #         data=payload)
+        #     if r.status_code == 201:
+        #         unposted.remove(r)
     except requests.exceptions.ConnectionError:
         print("Connection to site could not be made."
             " Storing readings to upload next time")
@@ -245,11 +246,11 @@ def main(debug=False, camera=False):
             if not debug and picture_file:
                 print("Picture file created, attempting upload...")
                 result = upload_photo(picture_file)
-                if type(result) == type(1):
-                    if len(unposted_photos) > 0:
-                        unposted_photos = upload_photos(unposted_photos)
-                if type(result) != type(1):
-                    unposted_photos.append(result)
+                # if type(result) == type(1):
+                #     if len(unposted_photos) > 0:
+                #         unposted_photos = upload_photos(unposted_photos)
+                # if type(result) != type(1):
+                #     unposted_photos.append(result)
             else:
                 print("no picture file")
 
