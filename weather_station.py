@@ -230,7 +230,7 @@ def main(debug=False, camera=False):
 
         if CAMERA:
             picture_file = None
-            # take picture every 5 minutes on the fifth minute, between the 
+            # take picture every 3 minutes on the fifth minute, between the 
             # hours of dawn and sunrise, and dusk and sunset
             if dawn_time <= loop_time_aware <= sunrise_time \
                     or sunset_time <= loop_time_aware <= dusk_time:
@@ -241,8 +241,8 @@ def main(debug=False, camera=False):
                     last_sun_picture = loop_time_aware
             
             if sunrise_time <= loop_time_aware <= sunset_time:
-                picture_file = camera.take_picture()
-            # picture_file = camera.take_picture()
+                if loop_time.minute == 0:
+                    picture_file = camera.take_picture()
 
             if not debug and picture_file:
                 print("Picture file created, attempting upload...")
