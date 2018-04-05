@@ -7,6 +7,7 @@ import argparse
 import os
 import os.path
 import random
+from pprint import pprint
 
 import pytz
 import requests
@@ -122,6 +123,7 @@ def upload_photo(picture_file):
             data=multipart_data,
         )
         print(r.headers["Content-Length"])
+        # pprint(r.text)
         if r.status_code == 201:
             print(r.status_code)
             os.remove(picture_file)
