@@ -240,11 +240,12 @@ def main(debug=False, camera=False):
                     picture_file = camera.take_picture()
                     last_sun_picture = loop_time_aware
             
-            # if sunrise_time <= loop_time_aware <= sunset_time:
-            #     if loop_time.minute == 0:
-            #         picture_file = camera.take_picture()
+            if sunrise_time <= loop_time_aware <= sunset_time:
+                if loop_time.minute == 0:
+                    picture_file = camera.take_picture()
 
-            picture_file = camera.take_picture()
+            # for debugging:
+            # picture_file = camera.take_picture()
 
             if not debug and picture_file:
                 print("Picture file created, attempting upload...")
