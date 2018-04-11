@@ -212,7 +212,7 @@ def main(debug=False, camera=False):
                     bmp_temp, pressure
                 ))
             except Exception as e:
-                print(f"Error {e} has occured, ignoring and going to next loop.")
+                print("Error {} has occured, ignoring and going to next loop.".format(e))
                 dht_temp, bmp_temp, humidity, pressure, altiture = None, None, None, None, None
                 continue
         else:
