@@ -201,15 +201,20 @@ def main(debug=False, camera=False):
             dusk_time = windsor.dusk()
             sunset_time = windsor.sunset()
 
-            humidity, dht_temp = t_h_sensor.read()
-            print("DHT Humidity: {}\nDHT Temperature: {}".format(
-                humidity, dht_temp))
+            try:
+                humidity, dht_temp = t_h_sensor.read()
+                print("DHT Humidity: {}\nDHT Temperature: {}".format(
+                    humidity, dht_temp))
 
-            t_p_sensor.reg_check()
-            bmp_temp, pressure, altitude = t_p_sensor.read()
-            print("BMP Temperature: {}\nBMP Pressure: {}".format(
-                bmp_temp, pressure
-            ))
+                t_p_sensor.reg_check()
+                bmp_temp, pressure, altitude = t_p_sensor.read()
+                print("BMP Temperature: {}\nBMP Pressure: {}".format(
+                    bmp_temp, pressure
+                ))
+            except Exception as e:
+                print(f"Error {e} has occured, ignoring and going to next loop.")
+                dht_temp, bmp_temp, humidity, pressure, altiture = None, None, None, None, None
+                continue
         else:
             dht_temp, bmp_temp, humidity, pressure, altitude = generate_random()
 
