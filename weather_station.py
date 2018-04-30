@@ -22,8 +22,8 @@ class Camera:
 
         self.camera.resolution = resolution
         self.framerate = framerate
-        self.camera.vflip = False
-        self.camera.hflip = False
+        self.camera.vflip = True
+        self.camera.hflip = True
         self.filename = 'image-{}.jpeg'.format(
             datetime.datetime.now().strftime('%d-%m-%y %X'))
         self.path = os.path.join('/home/pi/Dev/pi-weather-station/pics/', 
@@ -160,7 +160,7 @@ def round_time(dt=None, roundTo=60):
 
 def main(debug=False, camera=False):
     loop_wait = 60 * 1
-
+    
     PICTURE_WAIT_MINUTES = 60
 
     unposted = []
@@ -180,15 +180,15 @@ def main(debug=False, camera=False):
             'Canada/Eastern', 180))
         
         t_h_sensor = DHT22()
-        t_p_sensor = BMP280()
+        # t_p_sensor = BMP280()
         camera = Camera()
 
-        chip_id, chip_version = t_p_sensor.read_id()
+        # chip_id, chip_version = t_p_sensor.read_id()
 
-        if not chip_id == 88:
-            print("Error")
-            print("Chip ID     : %d" % chip_id)
-            print("Version     : %d" % chip_version)
+        #if not chip_id == 88:
+        #    print("Error")
+        #    print("Chip ID     : %d" % chip_id)
+        #    print("Version     : %d" % chip_version)
 
     while True:
         # video_taken = False
@@ -196,21 +196,21 @@ def main(debug=False, camera=False):
         loop_time_aware = pytz.timezone('Canada/Eastern').localize(loop_time)
 
         if not debug:
-            dawn_time = windsor.dawn()
-            sunrise_time = windsor.sunrise()
-            dusk_time = windsor.dusk()
-            sunset_time = windsor.sunset()
+            dawn_time = tobermory.dawn()
+            sunrise_time = tobermory.sunrise()
+            dusk_time = tobermory.dusk()
+            sunset_time = tobermory.sunset()
 
             try:
                 humidity, dht_temp = t_h_sensor.read()
                 print("DHT Humidity: {}\nDHT Temperature: {}".format(
                     humidity, dht_temp))
 
-                t_p_sensor.reg_check()
-                bmp_temp, pressure, altitude = t_p_sensor.read()
-                print("BMP Temperature: {}\nBMP Pressure: {}".format(
-                    bmp_temp, pressure
-                ))
+                #t_p_sensor.reg_check()
+                #bmp_temp, pressure, altitude = t_p_sensor.read()
+                #print("BMP Temperature: {}\nBMP Pressure: {}".format(
+                #    bmp_temp, pressure
+                #))
             except Exception as e:
                 print("Error {} has occured, ignoring and going to next loop.".format(e))
                 dht_temp, bmp_temp, humidity, pressure, altiture = None, None, None, None, None
@@ -218,17 +218,16 @@ def main(debug=False, camera=False):
         else:
             dht_temp, bmp_temp, humidity, pressure, altitude = generate_random()
 
-        if humidity is not None and dht_temp is not None \
-                and bmp_temp is not None and pressure is not None:
-            temp = (dht_temp + bmp_temp) / 2
+        if humidity is not None and dht_temp is not None: #\
+                #and bmp_temp is not None and pressure is not None:
+            temp = dht_temp
             print(('{0:%d-%m-%y %X} - '
                    'Temperature = {1:0.1f}*\t'
                    'Humidity = {2:0.1f}%\t'
-                   'Pressure = {3:0.2f} '
-                   'mbar').format(loop_time, temp, humidity, pressure, altitude))
+                   'mbar').format(loop_time, temp, humidity))
 
             upload_reading(unposted, debug, time=loop_time, temp=temp, humidity=humidity, 
-                pressure=pressure)
+                pressure=0)
 
         else:
             print('Failed to get reading.')
@@ -242,15 +241,15 @@ def main(debug=False, camera=False):
 
                 if not last_sun_picture or \
                         ((loop_time_aware - last_sun_picture).seconds // 60 >= 3):
-                    picture_file = camera.take_picture()
+                    picture_file = camera.take_picture(resolution=(1920, 1080))
                     last_sun_picture = loop_time_aware
             
             if sunrise_time <= loop_time_aware <= sunset_time:
                 if loop_time.minute == 0:
-                    picture_file = camera.take_picture()
+                    picture_file = camera.take_picture(resolution=(1920, 1080))
 
-            # for debugging:
-            # picture_file = camera.take_picture()
+            # for debugging
+            # picture_file = camera.take_picture(resolution=(640, 480))
 
             if not debug and picture_file:
                 print("Picture file created, attempting upload...")
