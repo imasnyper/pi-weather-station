@@ -252,7 +252,7 @@ def main(debug=False, camera=False):
             chi_start = datetime.datetime(2018, 5, 3, 3, 45)
             chi_start = pytz.timezone("Canada/Eastern").localize(chi_start)
             chi_end = datetime.datetime(2018, 5, 3, 4, 45)
-            chi_end = pytz.timezone("Canada/Eastern").localize(chi_start)
+            chi_end = pytz.timezone("Canada/Eastern").localize(chi_end)
             if chi_start <= loop_time_aware <= chi_end:
                 picture_file = camera.take_picture(resolution=(2048, 1536))
 
