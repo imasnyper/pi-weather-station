@@ -249,15 +249,12 @@ def main(debug=False, camera=False):
                     picture_file = camera.take_picture(resolution=(2048, 1536))
 
             # 3:45 to 4:45 for chi chemaun passing
-            try:
-                chi_start = datetime.datetime(2018, 5, 3, 3, 45)
-                chi_start = pytz.timezone("Canada/Eastern").localize(chi_start)
-                chi_end = datetime.datetime(2018, 5, 3, 4, 45)
-                chi_end = pytz.timezone("Canada/Eastern").localize(chi_start)
-                if chi_start <= loop_time_aware <= chi_end:
-                    picture_file = camera.take_picture(resolution=(2048, 1536))
-            except:
-                continue
+            chi_start = datetime.datetime(2018, 5, 3, 3, 45)
+            chi_start = pytz.timezone("Canada/Eastern").localize(chi_start)
+            chi_end = datetime.datetime(2018, 5, 3, 4, 45)
+            chi_end = pytz.timezone("Canada/Eastern").localize(chi_start)
+            if chi_start <= loop_time_aware <= chi_end:
+                picture_file = camera.take_picture(resolution=(2048, 1536))
 
             # for debugging
             # picture_file = camera.take_picture(resolution=(2048, 1536))
