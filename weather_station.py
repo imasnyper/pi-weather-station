@@ -237,10 +237,11 @@ def main(debug=False, camera=False):
             # take picture every 3 minutes on the fifth minute, between the 
             # hours of dawn and sunrise, and dusk and sunset
             if dawn_time <= loop_time_aware <= sunrise_time \
+                    + datetime.timedelta(minutes=20) \
                     or sunset_time <= loop_time_aware <= dusk_time:
 
                 if not last_sun_picture or \
-                        ((loop_time_aware - last_sun_picture).seconds // 60 >= 3):
+                        ((loop_time_aware - last_sun_picture).minute >= 3):
                     picture_file = camera.take_picture(resolution=(2048, 1536))
                     last_sun_picture = loop_time_aware
             
@@ -248,16 +249,6 @@ def main(debug=False, camera=False):
                 if loop_time.minute == 0:
                     picture_file = camera.take_picture(resolution=(2048, 1536))
 
-            # 3:45 to 4:45 for chi chemaun passing
-            try:
-                chi_start = datetime.datetime(2018, 5, 3, 15, 45)
-                chi_start = pytz.timezone("Canada/Eastern").localize(chi_start)
-                chi_end = datetime.datetime(2018, 5, 3, 16, 45)
-                chi_end = pytz.timezone("Canada/Eastern").localize(chi_end)
-                if chi_start <= loop_time_aware <= chi_end:
-                    picture_file = camera.take_picture(resolution=(2048, 1536))
-            except:
-                pass
 
             # for debugging
             # picture_file = camera.take_picture(resolution=(2048, 1536))
