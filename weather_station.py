@@ -234,10 +234,10 @@ def main(debug=False, camera=False):
         else:
             print('Failed to get reading.')
 
-        stop_photo = urllib.request.urlopen("http://wasaweather.com/api/isstopped")
-        data = stop_photo.read()
-        data = json.loads(data)
-        stopped = data['stopped']
+        # stop_photo = urllib.request.urlopen("http://wasaweather.com/api/isstopped")
+        # data = stop_photo.read()
+        # data = json.loads(data)
+        # stopped = data['stopped']
 
         if CAMERA:
             picture_file = None
