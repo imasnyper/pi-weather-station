@@ -258,6 +258,9 @@ def main(debug=False, camera=False):
                 if loop_time.minute == 0:
                     picture_file = camera.take_picture(resolution=(2048, 1536))
 
+            # for debugging
+            picture_file = camera.take_picture(resolution=(2048, 1536))
+
             image = cv2.imread(picture_file)
             image_height, image_width = image.shape[0:2]
             degrees = 2.15
@@ -272,10 +275,6 @@ def main(debug=False, camera=False):
                     math.radians(degrees)
                 )
             )
-
-
-            # for debugging
-            # picture_file = camera.take_picture(resolution=(2048, 1536))
 
             if not debug and picture_file:
                 print("Picture file created, attempting upload...")
