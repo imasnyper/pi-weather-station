@@ -15,7 +15,7 @@ import pytz
 import requests
 from requests_toolbelt.multipart.encoder import MultipartEncoder
 
-import util
+# import util
 
 class Camera:
     def __init__(self):
@@ -259,22 +259,22 @@ def main(debug=False, camera=False):
                     picture_file = camera.take_picture(resolution=(2048, 1536))
 
             # for debugging
-            picture_file = camera.take_picture(resolution=(2048, 1536))
+            # picture_file = camera.take_picture(resolution=(2048, 1536))
 
-            image = cv2.imread(picture_file)
-            image_height, image_width = image.shape[0:2]
-            degrees = 2.15
+            # image = cv2.imread(picture_file)
+            # image_height, image_width = image.shape[0:2]
+            # degrees = 2.15
 
-            image_orig = np.copy(image)
-            image_rotated = rotate_image(image, degrees)
-            image_rotated_cropped = crop_around_center(
-                image_rotated,
-                *largest_rotated_rect(
-                    image_width,
-                    image_height,
-                    math.radians(degrees)
-                )
-            )
+            # image_orig = np.copy(image)
+            # image_rotated = rotate_image(image, degrees)
+            # image_rotated_cropped = crop_around_center(
+            #     image_rotated,
+            #     *largest_rotated_rect(
+            #         image_width,
+            #         image_height,
+            #         math.radians(degrees)
+            #     )
+            # )
 
             if not debug and picture_file:
                 print("Picture file created, attempting upload...")
