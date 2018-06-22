@@ -278,7 +278,7 @@ def main(debug=False, camera=False):
 
             if not debug and picture_file:
                 print("Picture file created, attempting upload...")
-                result = upload_photo(image_rotated_cropped)
+                result = upload_photo(picture_file)
                 # if type(result) == type(1):
                 #     if len(unposted_photos) > 0:
                 #         unposted_photos = upload_photos(unposted_photos)
