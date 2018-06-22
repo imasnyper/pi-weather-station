@@ -15,6 +15,8 @@ import pytz
 import requests
 from requests_toolbelt.multipart.encoder import MultipartEncoder
 
+import util
+
 class Camera:
     def __init__(self):
         self.camera = PiCamera()
@@ -256,13 +258,28 @@ def main(debug=False, camera=False):
                 if loop_time.minute == 0:
                     picture_file = camera.take_picture(resolution=(2048, 1536))
 
+            image = cv2.imread(picture_file)
+            image_height, image_width = image.shape[0:2]
+            degrees = 2.15
+
+            image_orig = np.copy(image)
+            image_rotated = rotate_image(image, degrees)
+            image_rotated_cropped = crop_around_center(
+                image_rotated,
+                *largest_rotated_rect(
+                    image_width,
+                    image_height,
+                    math.radians(degrees)
+                )
+            )
+
 
             # for debugging
             # picture_file = camera.take_picture(resolution=(2048, 1536))
 
             if not debug and picture_file:
                 print("Picture file created, attempting upload...")
-                result = upload_photo(picture_file)
+                result = upload_photo(image_rotated_cropped)
                 # if type(result) == type(1):
                 #     if len(unposted_photos) > 0:
                 #         unposted_photos = upload_photos(unposted_photos)
