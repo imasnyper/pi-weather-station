@@ -262,7 +262,7 @@ def main(debug=False, camera=False):
                     picture_file = camera.take_picture(resolution=(2048, 1536))
 
             # for debugging
-            picture_file = camera.take_picture(resolution=(2048, 1536))
+            # picture_file = camera.take_picture(resolution=(2048, 1536))
 
             if not debug and picture_file:
                 print("Picture file created, attempting upload...")
