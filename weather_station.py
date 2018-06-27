@@ -14,8 +14,9 @@ import json
 import pytz
 import requests
 from requests_toolbelt.multipart.encoder import MultipartEncoder
+from PIL import Image
 
-# import util
+import util
 
 class Camera:
     def __init__(self):
@@ -146,8 +147,10 @@ def upload_photos(picture_files):
         result = upload_photo(picture)
         if type(result) != type(1):
             return picture_files
+        else:
+            picture_files.remove(picture)
 
-    return []
+    return picture_files
 
 
 def round_time(dt=None, roundTo=60):
@@ -168,9 +171,7 @@ def main(debug=False, camera=False):
     PICTURE_WAIT_MINUTES = 60
 
     unposted = []
-    unposted_photos = []
-
-    last_sun_picture = None
+    unposted_photos = []    
 
     if not debug:
         windsor = Location(
@@ -198,6 +199,7 @@ def main(debug=False, camera=False):
         # video_taken = False
         loop_time = datetime.datetime.now()
         loop_time_aware = pytz.timezone('Canada/Eastern').localize(loop_time)
+        last_sun_picture = None
 
         if not debug:
             dawn_time = tobermory.dawn()
@@ -243,7 +245,7 @@ def main(debug=False, camera=False):
 
         if CAMERA:
             picture_file = None
-            # take picture every 3 minutes on the fifth minute, between the 
+            # take picture every 3 minutes on the third minute, between the 
             # hours of dawn and sunrise, and dusk and sunset
             if dawn_time <= loop_time_aware <= sunrise_time \
                     + datetime.timedelta(minutes=20) \
@@ -259,22 +261,23 @@ def main(debug=False, camera=False):
                     picture_file = camera.take_picture(resolution=(2048, 1536))
 
             # for debugging
-            # picture_file = camera.take_picture(resolution=(2048, 1536))
+            picture_file = camera.take_picture(resolution=(2048, 1536))
 
-            # image = cv2.imread(picture_file)
-            # image_height, image_width = image.shape[0:2]
-            # degrees = 2.15
+            image = Image.open(picture_file)
+            image_height, image_width = image.size
+            degrees = -2.15
 
-            # image_orig = np.copy(image)
-            # image_rotated = rotate_image(image, degrees)
-            # image_rotated_cropped = crop_around_center(
-            #     image_rotated,
-            #     *largest_rotated_rect(
-            #         image_width,
-            #         image_height,
-            #         math.radians(degrees)
-            #     )
-            # )
+            image_rotated = util.rotate_image(image, degrees)
+            image_rotated_cropped = util.crop_around_center(
+                image_rotated,
+                *util.largest_rotated_rect(
+                    image_width,
+                    image_height,
+                    math.radians(degrees)
+                )
+            )
+
+            picture_file = image_rotated_cropped.save(picture_file)
 
             if not debug and picture_file:
                 print("Picture file created, attempting upload...")
