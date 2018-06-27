@@ -280,7 +280,7 @@ def main(debug=False, camera=False):
 
             print(picture_file)
 
-            picture_file = image_rotated_cropped.save(picture_file)
+            image_rotated_cropped.save(picture_file)
 
             print(picture_file)
 
