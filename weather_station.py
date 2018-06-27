@@ -264,28 +264,25 @@ def main(debug=False, camera=False):
             # for debugging
             picture_file = camera.take_picture(resolution=(2048, 1536))
 
-            image = Image.open(picture_file)
-            image_height, image_width = image.size
-            degrees = -2.15
-
-            image_rotated = image.rotate(degrees)
-            image_rotated_cropped = util.crop_around_center(
-                image_rotated,
-                *util.largest_rotated_rect(
-                    image_width,
-                    image_height,
-                    math.radians(degrees)
-                )
-            )
-
-            print(picture_file)
-
-            image_rotated_cropped.save(picture_file)
-
-            print(picture_file)
-
             if not debug and picture_file:
                 print("Picture file created, attempting upload...")
+
+                image = Image.open(picture_file)
+                image_height, image_width = image.size
+                degrees = -2.15
+
+                image_rotated = image.rotate(degrees)
+                image_rotated_cropped = util.crop_around_center(
+                    image_rotated,
+                    *util.largest_rotated_rect(
+                        image_width,
+                        image_height,
+                        math.radians(degrees)
+                    )
+                )
+
+                image_rotated_cropped.save(picture_file)
+
                 result = upload_photo(picture_file)
                 # if type(result) == type(1):
                 #     if len(unposted_photos) > 0:
