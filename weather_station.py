@@ -278,7 +278,11 @@ def main(debug=False, camera=False):
                 )
             )
 
+            print(picture_file)
+
             picture_file = image_rotated_cropped.save(picture_file)
+
+            print(picture_file)
 
             if not debug and picture_file:
                 print("Picture file created, attempting upload...")
