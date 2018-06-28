@@ -172,7 +172,9 @@ def main(debug=False, camera=False):
     PICTURE_WAIT_MINUTES = 60
 
     unposted = []
-    unposted_photos = []    
+    unposted_photos = []
+    last_sun_picture = None
+
 
     if not debug:
         windsor = Location(
@@ -200,7 +202,6 @@ def main(debug=False, camera=False):
         # video_taken = False
         loop_time = datetime.datetime.now()
         loop_time_aware = pytz.timezone('Canada/Eastern').localize(loop_time)
-        last_sun_picture = None
 
         if not debug:
             dawn_time = tobermory.dawn()
