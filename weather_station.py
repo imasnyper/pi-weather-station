@@ -272,7 +272,7 @@ def main(debug=False, camera=False):
                 image_height, image_width = image.size
                 degrees = -2.15
 
-                image_rotated = image.rotate(degrees)
+                image_rotated = image.rotate(degrees, resample=Image.BICUBIC)
                 image_rotated_cropped = util.crop_around_center(
                     image_rotated,
                     *util.largest_rotated_rect(
