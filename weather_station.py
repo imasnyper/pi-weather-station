@@ -251,7 +251,8 @@ def main(debug=False, camera=False):
             # hours of dawn and sunrise, and dusk and sunset
             if dawn_time <= loop_time_aware <= sunrise_time \
                     + datetime.timedelta(minutes=20) \
-                    or sunset_time <= loop_time_aware <= dusk_time:
+                    or sunset_time <= loop_time_aware <= dusk_time \
+                    - datetime.timedelta(minutes=20):
 
                 if not last_sun_picture or \
                         ((loop_time_aware - last_sun_picture).seconds / 60 >= 3):
