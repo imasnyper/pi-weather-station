@@ -333,7 +333,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     logging.basicConfig(filename='weather.log',
-                        format='%(asctime)s %(message)s', level=INFO)
+                        format='%(asctime)s %(message)s', level=logging.INFO)
     logger = logging.getLogger(__name__)
 
     DEBUG = args.debug
