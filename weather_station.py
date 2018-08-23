@@ -11,6 +11,7 @@ from pprint import pprint
 import urllib.request
 import json
 import math
+import logging
 
 import pytz
 import requests
@@ -19,12 +20,14 @@ from PIL import Image
 
 import util
 
+
 class Camera:
     def __init__(self):
         self.camera = PiCamera()
 
     def take_picture(self, resolution=(3280, 2464), framerate=15):
         print('Taking picture...')
+        logger.info("Taking picture...")
 
         self.camera.resolution = resolution
         self.framerate = framerate
@@ -32,8 +35,8 @@ class Camera:
         self.camera.hflip = True
         self.filename = 'image-{}.jpeg'.format(
             datetime.datetime.now().strftime('%d-%m-%y %X'))
-        self.path = os.path.join('/home/pi/Dev/pi-weather-station/pics/', 
-            self.filename)
+        self.path = os.path.join('/home/pi/Dev/pi-weather-station/pics/',
+                                 self.filename)
 
         self.camera.start_preview()
 
@@ -46,6 +49,7 @@ class Camera:
 
     def take_video(self, resolution=(1920, 1080), framerate=30, length=10):
         print('Taking video...')
+        logger.info('Taking video...')
 
         self.camera.resolution = resolution
         self.camera.framerate = framerate
@@ -91,17 +95,20 @@ def upload_reading(unposted, debug, **kwargs):
         upload_site = 'http://wasaweather.com/api/add_reading'
 
     try:
-        r = requests.post(upload_site, 
-            data=payload)
+        r = requests.post(upload_site,
+                          data=payload)
         print(r)
+        logger.info(r)
         # for payload in unposted:
-        #     r = requests.post(upload_site, 
+        #     r = requests.post(upload_site,
         #         data=payload)
         #     if r.status_code == 201:
         #         unposted.remove(r)
     except requests.exceptions.ConnectionError:
         print("Connection to site could not be made."
-            " Storing readings to upload next time")
+              " Storing readings to upload next time")
+        logger.info("Connection to site could not be made."
+                    " Storing readings to upload next time")
         unposted.append(payload)
 
 
@@ -110,6 +117,7 @@ def upload_photo(picture_file):
     Returns 201 if succesful, or the picture file if the upload fails
     """
     print("Picture size: " + str(os.stat(picture_file).st_size))
+    logger.info("Picture size: " + str(os.stat(picture_file).st_size))
     upload_site = 'http://wasaweather.com/api/add_photo'
     try:
         multipart_data = MultipartEncoder(
@@ -122,24 +130,29 @@ def upload_photo(picture_file):
             }
         )
         r = requests.post(
-            upload_site, 
+            upload_site,
             headers={
                 "Content-Type": multipart_data.content_type,
             },
             data=multipart_data,
         )
         print(r.headers["Content-Length"])
+        logger.info(r.headers["Content-Length"])
         # pprint(r.text)
         if r.status_code == 201:
             print(r.status_code)
+            logger.info(r.status_code)
             os.remove(picture_file)
             return r.status_code
         else:
             print(r.status_code)
+            logger.info(r.status_code)
             return picture_file
 
     except requests.exceptions.ConnectionError:
         print("Connection to site could not be made. Storing readings to upload next time")
+        logger.info(
+            "Connection to site could not be made. Storing readings to upload next time")
         return picture_file
 
 
@@ -155,45 +168,45 @@ def upload_photos(picture_files):
 
 
 def round_time(dt=None, roundTo=60):
-   """Round a datetime object to any time laps in seconds
-   dt : datetime.datetime object, default now.
-   roundTo : Closest number of seconds to round to, default 1 minute.
-   Author: Thierry Husson 2012 - Use it as you want but don't blame me.
-   """
-   if dt == None : dt = datetime.datetime.now()
-   seconds = (dt.replace(tzinfo=None) - dt.min).seconds
-   rounding = (seconds+roundTo/2) // roundTo * roundTo
-   return dt + datetime.timedelta(0,rounding-seconds,-dt.microsecond)
+    """Round a datetime object to any time laps in seconds
+    dt : datetime.datetime object, default now.
+    roundTo : Closest number of seconds to round to, default 1 minute.
+    Author: Thierry Husson 2012 - Use it as you want but don't blame me.
+    """
+    if dt == None:
+        dt = datetime.datetime.now()
+    seconds = (dt.replace(tzinfo=None) - dt.min).seconds
+    rounding = (seconds+roundTo/2) // roundTo * roundTo
+    return dt + datetime.timedelta(0, rounding-seconds, -dt.microsecond)
 
 
 def main(debug=False, camera=False):
     loop_wait = 60 * 1
-    
+
     PICTURE_WAIT_MINUTES = 60
 
     unposted = []
     unposted_photos = []
     last_sun_picture = None
 
-
     if not debug:
         windsor = Location(
-            ('Windsor', 'Ontario', 
-            42.3149, -83.0364, 
-            'Canada/Eastern', 190))
+            ('Windsor', 'Ontario',
+             42.3149, -83.0364,
+             'Canada/Eastern', 190))
 
         tobermory = Location(
             ('Tobermory', 'Ontario',
-            45.2534, -81.6645,
-            'Canada/Eastern', 180))
-        
+             45.2534, -81.6645,
+             'Canada/Eastern', 180))
+
         t_h_sensor = DHT22()
         # t_p_sensor = BMP280()
         camera = Camera()
 
         # chip_id, chip_version = t_p_sensor.read_id()
 
-        #if not chip_id == 88:
+        # if not chip_id == 88:
         #    print("Error")
         #    print("Chip ID     : %d" % chip_id)
         #    print("Version     : %d" % chip_version)
@@ -213,32 +226,41 @@ def main(debug=False, camera=False):
                 humidity, dht_temp = t_h_sensor.read()
                 print("DHT Humidity: {}\nDHT Temperature: {}".format(
                     humidity, dht_temp))
+                logger.info("DHT Humidity: {}\nDHT Temperature: {}".format(
+                    humidity, dht_temp))
 
-                #t_p_sensor.reg_check()
+                # t_p_sensor.reg_check()
                 #bmp_temp, pressure, altitude = t_p_sensor.read()
-                #print("BMP Temperature: {}\nBMP Pressure: {}".format(
+                # print("BMP Temperature: {}\nBMP Pressure: {}".format(
                 #    bmp_temp, pressure
                 #))
             except Exception as e:
                 print("Error {} has occured, ignoring and going to next loop.".format(e))
+                logger.info(
+                    "Error {} has occured, ignoring and going to next loop.".format(e))
                 dht_temp, bmp_temp, humidity, pressure, altiture = None, None, None, None, None
                 continue
         else:
             dht_temp, bmp_temp, humidity, pressure, altitude = generate_random()
 
-        if humidity is not None and dht_temp is not None: #\
-                #and bmp_temp is not None and pressure is not None:
+        if humidity is not None and dht_temp is not None:  # \
+                # and bmp_temp is not None and pressure is not None:
             temp = dht_temp
             print(('{0:%d-%m-%y %X} - '
                    'Temperature = {1:0.1f}*\t'
                    'Humidity = {2:0.1f}%\t'
                    'mbar').format(loop_time, temp, humidity))
+            logger.info(('{0:%d-%m-%y %X} - '
+                         'Temperature = {1:0.1f}*\t'
+                         'Humidity = {2:0.1f}%\t'
+                         'mbar').format(loop_time, temp, humidity))
 
-            upload_reading(unposted, debug, time=loop_time, temp=temp, humidity=humidity, 
-                pressure=0)
+            upload_reading(unposted, debug, time=loop_time, temp=temp, humidity=humidity,
+                           pressure=0)
 
         else:
             print('Failed to get reading.')
+            logger.info('Failed to get reading.')
 
         # stop_photo = urllib.request.urlopen("http://wasaweather.com/api/isstopped")
         # data = stop_photo.read()
@@ -247,7 +269,7 @@ def main(debug=False, camera=False):
 
         if CAMERA:
             picture_file = None
-            # take picture every 3 minutes on the third minute, between the 
+            # take picture every 3 minutes on the third minute, between the
             # hours of dawn and sunrise, and dusk and sunset
             if dawn_time <= loop_time_aware <= sunrise_time \
                     + datetime.timedelta(minutes=20) \
@@ -258,7 +280,7 @@ def main(debug=False, camera=False):
                         ((loop_time_aware - last_sun_picture).seconds / 60 >= 3):
                     picture_file = camera.take_picture(resolution=(2048, 1536))
                     last_sun_picture = loop_time_aware
-            
+
             if sunrise_time <= loop_time_aware <= sunset_time:
                 if loop_time.minute == 0:
                     picture_file = camera.take_picture(resolution=(2048, 1536))
@@ -268,6 +290,7 @@ def main(debug=False, camera=False):
 
             if not debug and picture_file:
                 print("Picture file created, attempting upload...")
+                logger.info("Picture file created, attempting upload...")
 
                 image = Image.open(picture_file)
                 image_height, image_width = image.size
@@ -293,7 +316,7 @@ def main(debug=False, camera=False):
                 #     unposted_photos.append(result)
             else:
                 print("no picture file")
-
+                logger.info("no picture file")
 
         now = datetime.datetime.now()
 
@@ -302,11 +325,16 @@ def main(debug=False, camera=False):
         print('Sleeping {} seconds...'.format(loop_wait - now.second))
         time.sleep(loop_wait - now.second)
 
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("--debug", help="turn debug on", action="store_true")
     parser.add_argument("--camera", help="turn camera on", action="store_true")
     args = parser.parse_args()
+
+    logging.basicConfig(filename='weather.log',
+                        format='%(asctime)s %(message)s', level=INFO)
+    logger = logging.getLogger(__name__)
 
     DEBUG = args.debug
     CAMERA = args.camera
@@ -315,5 +343,5 @@ if __name__ == '__main__':
         from picamera import PiCamera
         from sensors import DHT22, BMP280
         from astral import Location
-        
+
     main(debug=DEBUG, camera=CAMERA)
