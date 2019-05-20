@@ -96,11 +96,12 @@ def upload_reading(unposted, debug, **kwargs):
         print(r)
         logger.info(r)
         if r.status_code == 201:
-            for payload in unposted:
-                r = requests.post(upload_site,
-                                  data=payload)
-                if r.status_code == 201:
-                    unposted.remove(r)
+            if unposted:
+                for payload in unposted:
+                    r = requests.post(upload_site,
+                                      data=payload)
+                    if r.status_code == 201:
+                        unposted.remove(r)
 
         return r, unposted
 
