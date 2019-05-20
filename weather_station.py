@@ -184,12 +184,21 @@ def round_time(dt=None, roundTo=60):
 
 def main(debug=False, camera=False):
     try:
-        with open("unposted_readings.pickle", 'rb') as unposted_readings_file:
-            unposted = pickle.load(unposted_readings_file)
-        with open("unposted_photos.pickle", "rb") as unposted_photos_file:
-            unposted_photos = pickle.load(unposted_photos_file)
-        with open("last_sun_picture.pickle" "rb") as last_sun_picture_file:
-            last_sun_picture = pickle.load(last_sun_picture_file)
+        try:
+            with open("unposted_readings.pickle", 'rb') as unposted_readings_file:
+                unposted = pickle.load(unposted_readings_file)
+        except EOFError:
+            unposted = []
+        try:
+            with open("unposted_photos.pickle", "rb") as unposted_photos_file:
+                unposted_photos = pickle.load(unposted_photos_file)
+        except EOFError:
+            unposted_photos = []
+        try:
+            with open("last_sun_picture.pickle" "rb") as last_sun_picture_file:
+                last_sun_picture = pickle.load(last_sun_picture_file)
+        except EOFError:
+            last_sun_picture = None
     except FileNotFoundError:
         pass
 
