@@ -248,6 +248,9 @@ def main(debug=False, camera=False):
             print("BMP Temperature: {}\nBMP Pressure: {}\nBMP Altitude: {}".format(
                 bmp_temp, pressure, altitude
             ))
+            logger.info("BMP Temperature: {}\nBMP Pressure: {}\nBMP Altitude: {}".format(
+                bmp_temp, pressure, altitude
+            ))
         except Exception as e:
             print("Error {} has occured while reading from BMP280, ignoring this reading.".format(e))
             logger.info(
