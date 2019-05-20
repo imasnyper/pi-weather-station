@@ -312,6 +312,8 @@ def main(debug=False, camera=False):
                     ((loop_time_aware - last_sun_picture).seconds / 60 >= 3):
                 picture_file = camera.take_picture(resolution=(2048, 1536))
                 last_sun_picture = loop_time_aware
+                with open("last_sun_picture.pickle", "w+b") as last_sun_picture_file:
+                    pickle.dump(last_sun_picture, last_sun_picture_file)
 
         # take pictures at the top of every hour during daylight hours
         if sunrise_time <= loop_time_aware <= sunset_time:
@@ -360,8 +362,6 @@ def main(debug=False, camera=False):
         pickle.dump(unposted, unposted_readings_file)
     with open("unposted_photos.pickle", "w+b") as unposted_photos_file:
         pickle.dump(unposted_photos, unposted_photos_file)
-    with open("last_sun_picture.pickle", "w+b") as last_sun_picture_file:
-        pickle.dump(last_sun_picture, last_sun_picture_file)
 
 
 if __name__ == '__main__':
