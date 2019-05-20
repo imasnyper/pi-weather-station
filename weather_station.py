@@ -183,6 +183,9 @@ def round_time(dt=None, roundTo=60):
 
 
 def main(debug=False, camera=False):
+    unposted = None
+    unposted_photos = None
+    last_sun_picture = None
     try:
         try:
             with open("unposted_readings.pickle", 'rb') as unposted_readings_file:
