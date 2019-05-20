@@ -183,11 +183,11 @@ def round_time(dt=None, roundTo=60):
 
 
 def main(debug=False, camera=False):
-    with open("unposted_readings.pickle", 'rb') as unposted_readings_file:
+    with open("unposted_readings.pickle", 'a+b') as unposted_readings_file:
         unposted = pickle.load(unposted_readings_file)
-    with open("unposted_photos.pickle", "rb") as unposted_photos_file:
+    with open("unposted_photos.pickle", "a+b") as unposted_photos_file:
         unposted_photos = pickle.load(unposted_photos_file)
-    with open("last_sun_picture.pickle" "rb") as last_sun_picture_file:
+    with open("last_sun_picture.pickle" "a+b") as last_sun_picture_file:
         last_sun_picture = pickle.load(last_sun_picture_file)
 
     loop_time = datetime.datetime.now()
@@ -348,7 +348,7 @@ def main(debug=False, camera=False):
         pickle.dump(unposted, unposted_readings_file)
     with open("unposted_photos.pickle", "wb") as unposted_photos_file:
         pickle.dump(unposted_photos, unposted_photos_file)
-    with open("last_sun_photo.pickle", "wb") as last_sun_picture_file:
+    with open("last_sun_picture.pickle", "wb") as last_sun_picture_file:
         pickle.dump(last_sun_picture, last_sun_picture_file)
 
 
