@@ -3,7 +3,10 @@ client_id.json
 tempumidity.html
 tempumidity.pickle
 __pycache__
-venv/*
+.venv/*
 nohup.out
 pics
 *.pyc
+weather.log
+Pipfile
+Pipfile.lock

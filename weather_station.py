@@ -240,7 +240,7 @@ def main(debug=False, camera=False):
 
         if humidity is not None and dht_temp is not None:
             if bmp_temp is not None and pressure is not None:
-                temp = dht_temp + bmp_temp / 2
+                temp = (dht_temp + bmp_temp) / 2
             else:
                 temp = dht_temp
                 pressure = -1
@@ -259,7 +259,7 @@ def main(debug=False, camera=False):
 
         elif bmp_temp is not None and pressure is not None:
             if dht_temp is not None and humidity is not None:
-                temp = dht_temp + bmp_temp / 2
+                temp = (dht_temp + bmp_temp) / 2
             else:
                 temp = bmp_temp
                 humidity = -1
