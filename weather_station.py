@@ -1,15 +1,10 @@
 import time
 import datetime
-import os
 import os.path
-import pickle
 import argparse
 import os
 import os.path
 import random
-from pprint import pprint
-import urllib.request
-import json
 import math
 import logging
 
@@ -201,15 +196,10 @@ def main(debug=False, camera=False):
              'Canada/Eastern', 180))
 
         t_h_sensor = DHT22()
-        # t_p_sensor = BMP280()
+        t_p_sensor = BMP280()
+        t_p_sensor.sea_level_pressure = t_p_sensor.read_pressure()
         camera = Camera()
 
-        # chip_id, chip_version = t_p_sensor.read_id()
-
-        # if not chip_id == 88:
-        #    print("Error")
-        #    print("Chip ID     : %d" % chip_id)
-        #    print("Version     : %d" % chip_version)
 
     while True:
         # video_taken = False
@@ -228,35 +218,63 @@ def main(debug=False, camera=False):
                     humidity, dht_temp))
                 logger.info("DHT Humidity: {}\nDHT Temperature: {}".format(
                     humidity, dht_temp))
-
-                # t_p_sensor.reg_check()
-                #bmp_temp, pressure, altitude = t_p_sensor.read()
-                # print("BMP Temperature: {}\nBMP Pressure: {}".format(
-                #    bmp_temp, pressure
-                #))
             except Exception as e:
-                print("Error {} has occured, ignoring and going to next loop.".format(e))
+                print("Error {} has occured while reading from DHT22, ignoring this reading.".format(e))
                 logger.info(
-                    "Error {} has occured, ignoring and going to next loop.".format(e))
-                dht_temp, bmp_temp, humidity, pressure, altiture = None, None, None, None, None
-                continue
+                    "Error {} has occured while reading from DHT22, ignoring this reading.".format(e))
+                dht_temp, humidity = None, None
+            try:
+                bmp_temp = t_p_sensor.read_temperature()
+                pressure = t_p_sensor.read_pressure()
+                altitude = t_p_sensor.read_altitude()
+                print("BMP Temperature: {}\nBMP Pressure: {}\nBMP Altitude: {}".format(
+                    bmp_temp, pressure, altitude
+                ))
+            except Exception as e:
+                print("Error {} has occured while reading from BMP280, ignoring this reading.".format(e))
+                logger.info(
+                    "Error {} has occured while reading from BMP280, ignoring this reading.".format(e))
+                bmp_temp, pressure, altitude = None, None, None
         else:
             dht_temp, bmp_temp, humidity, pressure, altitude = generate_random()
 
-        if humidity is not None and dht_temp is not None:  # \
-                # and bmp_temp is not None and pressure is not None:
-            temp = dht_temp
+        if humidity is not None and dht_temp is not None:
+            if bmp_temp is not None and pressure is not None:
+                temp = dht_temp + bmp_temp / 2
+            else:
+                temp = dht_temp
+                pressure = -1
+
             print(('{0:%d-%m-%y %X} - '
                    'Temperature = {1:0.1f}*\t'
                    'Humidity = {2:0.1f}%\t'
-                   'mbar').format(loop_time, temp, humidity))
+                   'Pressure = {3} mbar').format(loop_time, temp, humidity, pressure))
             logger.info(('{0:%d-%m-%y %X} - '
                          'Temperature = {1:0.1f}*\t'
                          'Humidity = {2:0.1f}%\t'
-                         'mbar').format(loop_time, temp, humidity))
+                         'Pressure = {3} mbar').format(loop_time, temp, humidity, pressure))
 
             upload_reading(unposted, debug, time=loop_time, temp=temp, humidity=humidity,
-                           pressure=0)
+                           pressure=pressure)
+
+        elif bmp_temp is not None and pressure is not None:
+            if dht_temp is not None and humidity is not None:
+                temp = dht_temp + bmp_temp / 2
+            else:
+                temp = bmp_temp
+                humidity = -1
+
+            print(('{0:%d-%m-%y %X} - '
+                   'Temperature = {1:0.1f}*\t'
+                   'Humidity = {2:0.1f}%\t'
+                   'Pressure = {3} mbar').format(loop_time, temp, humidity, pressure))
+            logger.info(('{0:%d-%m-%y %X} - '
+                         'Temperature = {1:0.1f}*\t'
+                         'Humidity = {2:0.1f}%\t'
+                         'Pressure = {3} mbar').format(loop_time, temp, humidity, pressure))
+
+            upload_reading(unposted, debug, time=loop_time, temp=temp, humidity=humidity,
+                           pressure=pressure)
 
         else:
             print('Failed to get reading.')
