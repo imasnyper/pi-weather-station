@@ -10,3 +10,4 @@ pics
 weather.log
 Pipfile
 Pipfile.lock
+*.pickle
