@@ -384,7 +384,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("--debug", help="turn debug on", action="store_true")
     parser.add_argument("--camera", help="turn camera on", action="store_true")
-    parser.add_argument("--force_photo", help="take a photo now", action="store true")
+    parser.add_argument("--force_photo", help="take a photo now", action="store_true")
     args = parser.parse_args()
 
     logging.basicConfig(filename='weather.log',
