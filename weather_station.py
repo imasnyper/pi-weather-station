@@ -31,7 +31,7 @@ class Camera:
         self.camera.hflip = True
         self.filename = 'image-{}.jpeg'.format(
             datetime.datetime.now().strftime('%d-%m-%y %X'))
-        self.path = os.path.join('/home/pi/Dev/pi-weather-station/pics/',
+        self.path = os.path.join('/home/pi/dev/pi-weather-station/pics/',
                                  self.filename)
 
         self.camera.start_preview()
