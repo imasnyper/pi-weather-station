@@ -115,6 +115,31 @@ def upload_reading(unposted, debug, **kwargs):
         return r, unposted
 
 
+def prep_photo(picture_file):
+    print("Picture file created, attempting upload...")
+    logger.info("Picture file created, attempting upload...")
+
+    image = Image.open(picture_file)
+    image_height, image_width = image.size
+    degrees = -2.15
+
+    image_rotated = image.rotate(degrees, resample=Image.BICUBIC)
+    image_rotated_cropped = util.crop_around_center(
+        image_rotated,
+        *util.largest_rotated_rect(
+            image_width,
+            image_height,
+            math.radians(degrees)
+        )
+    )
+
+    image_rotated_cropped.save(picture_file)
+
+    result = upload_photo(picture_file)
+
+    return result
+
+
 def upload_photo(picture_file):
     """Uploads a photo to website with http request
     Returns 201 if succesful, or the picture file if the upload fails
@@ -183,7 +208,7 @@ def round_time(dt=None, roundTo=60):
     return dt + datetime.timedelta(0, rounding - seconds, -dt.microsecond)
 
 
-def main(debug=False, camera=False):
+def main(debug=False, camera=False, force_photo=False):
     unposted = None
     unposted_photos = None
     last_sun_picture = None
@@ -237,9 +262,9 @@ def main(debug=False, camera=False):
             logger.info("DHT Humidity: {}\nDHT Temperature: {}".format(
                 humidity, dht_temp))
         except Exception as e:
-            print("Error {} has occured while reading from DHT22, ignoring this reading.".format(e))
+            print("Error {} has occurred while reading from DHT22, ignoring this reading.".format(e))
             logger.info(
-                "Error {} has occured while reading from DHT22, ignoring this reading.".format(e))
+                "Error {} has occurred while reading from DHT22, ignoring this reading.".format(e))
             dht_temp, humidity = None, None
         try:
             bmp_temp = t_p_sensor.read_temperature()
@@ -252,9 +277,9 @@ def main(debug=False, camera=False):
                 bmp_temp, pressure, altitude
             ))
         except Exception as e:
-            print("Error {} has occured while reading from BMP280, ignoring this reading.".format(e))
+            print("Error {} has occurred while reading from BMP280, ignoring this reading.".format(e))
             logger.info(
-                "Error {} has occured while reading from BMP280, ignoring this reading.".format(e))
+                "Error {} has occurred while reading from BMP280, ignoring this reading.".format(e))
             bmp_temp, pressure, altitude = None, None, None
     else:
         dht_temp, bmp_temp, humidity, pressure, altitude = generate_random()
@@ -306,8 +331,12 @@ def main(debug=False, camera=False):
     # data = json.loads(data)
     # stopped = data['stopped']
 
-    if CAMERA:
-        picture_file = None
+    picture_file = None
+
+    if force_photo:
+        picture_file = camera.take_picture(resolution=(2048, 1536))
+
+    if camera:
         # take picture every 3 minutes on the third minute, between the
         # hours of dawn and sunrise, and dusk and sunset
         if dawn_time <= loop_time_aware <= sunrise_time \
@@ -327,35 +356,15 @@ def main(debug=False, camera=False):
             if loop_time.minute == 0:  # 0th minute of the hour AKA the top of the hour
                 picture_file = camera.take_picture(resolution=(2048, 1536))
 
-        # for debugging
-        # picture_file = camera.take_picture(resolution=(2048, 1536))
-
         if not debug and picture_file:
-            print("Picture file created, attempting upload...")
-            logger.info("Picture file created, attempting upload...")
-
-            image = Image.open(picture_file)
-            image_height, image_width = image.size
-            degrees = -2.15
-
-            image_rotated = image.rotate(degrees, resample=Image.BICUBIC)
-            image_rotated_cropped = util.crop_around_center(
-                image_rotated,
-                *util.largest_rotated_rect(
-                    image_width,
-                    image_height,
-                    math.radians(degrees)
-                )
-            )
-
-            image_rotated_cropped.save(picture_file)
-
-            result = upload_photo(picture_file)
+            result = prep_photo(picture_file)
+            
             if isinstance(result, int):
                 if unposted_photos:
                     unposted_photos = upload_photos(unposted_photos)
             elif isinstance(result, str):
                 unposted_photos.append(result)
+
         else:
             print("no picture file")
             logger.info("no picture file")
@@ -375,6 +384,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("--debug", help="turn debug on", action="store_true")
     parser.add_argument("--camera", help="turn camera on", action="store_true")
+    parser.add_argument("--force_photo", help="take a photo now", action="store true")
     args = parser.parse_args()
 
     logging.basicConfig(filename='weather.log',
@@ -383,10 +393,11 @@ if __name__ == '__main__':
 
     DEBUG = args.debug
     CAMERA = args.camera
+    FORCE_PHOTO = args.force_photo
 
     if not DEBUG:
         from picamera import PiCamera
         from sensors import DHT22, BMP280
         from astral import Location
 
-    main(debug=DEBUG, camera=CAMERA)
+    main(debug=DEBUG, camera=CAMERA, force_photo=FORCE_PHOTO)
