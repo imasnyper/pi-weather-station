@@ -27,8 +27,8 @@ class Camera:
 
         self.camera.resolution = resolution
         self.framerate = framerate
-        self.camera.vflip = True
-        self.camera.hflip = True
+        self.camera.vflip = False
+        self.camera.hflip = False
         self.filename = 'image-{}.jpeg'.format(
             datetime.datetime.now().strftime('%d-%m-%y %X'))
         self.path = os.path.join('/home/pi/dev/pi-weather-station/pics/',
